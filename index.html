@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mozartova 10</title>
+<style>
+#mozApp{
+  display:block;
+  width:100%;
+  min-height:100vh;
+  font-family:-apple-system,'SF Pro Text','Helvetica Neue',sans-serif;
+  -webkit-font-smoothing:antialiased;
+  font-size:15px;
+  --g:#1d9e75;--gl:#e1f5ee;--gd:#0f6e56;
+  --bg:#ffffff;--bg2:#f5f5f7;--bgw:#eef2ff;--sidebar:#1a1a2e;
+  --tx:#1d1d1f;--tx2:#6e6e73;--tx3:#aeaeb2;
+  --br:rgba(0,0,0,0.08);--rl:#fcebeb;--rd:#a32d2d;--al:#faeeda;--a:#ba7517;
+  --bk:#3b5bdb;--ab:#f87171;
+  --r:12px;--rm:8px;
+  background:#ffffff;
+  color:#1d1d1f;
+  position:relative;
+}
+#mozApp *{box-sizing:border-box;font-family:-apple-system,'SF Pro Text','Helvetica Neue',sans-serif}
+#mozApp input,#mozApp select,#mozApp textarea,#mozApp button{font-size:15px}
+
+/* LOGIN */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100%;padding:20px}
+.login-box{width:340px;text-align:center}
+.login-logo{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--tx2);margin-bottom:36px}
+.user-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px}
+.user-btn{padding:14px 10px;border:0.5px solid var(--br);border-radius:var(--r);background:var(--bg2);cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
+.user-btn:hover{border-color:var(--g);background:var(--gl)}
+.user-btn.sel{border-color:var(--g);background:var(--gl)}
+.user-avatar{width:40px;height:40px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff}
+.user-name{font-size:13px;font-weight:500;color:var(--tx)}
+.user-role{font-size:11px;color:var(--tx2);margin-top:2px}
+.pin-section{margin-top:4px}
+.pin-label{font-size:12px;color:var(--tx2);margin-bottom:10px}
+.pin-dots{display:flex;justify-content:center;gap:10px;margin-bottom:16px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--br);background:transparent;transition:background .15s}
+.pin-dot.filled{background:var(--g);border-color:var(--g)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto}
+.pin-key{height:52px;border:0.5px solid var(--br);border-radius:var(--rm);background:var(--bg2);font-size:18px;font-weight:500;cursor:pointer;transition:background .1s}
+.pin-key:active{background:var(--br)}
+.pin-key.del{font-size:14px;color:var(--tx2)}
+.login-err{color:var(--rd);font-size:13px;margin-top:14px;min-height:20px}
+.ha-badge{display:inline-block;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.5px;margin-top:3px}
+
+/* APP LAYOUT */
+.app{display:none}
+.app.visible{display:flex;min-height:100%;width:100%}
+.sidebar{width:200px;flex-shrink:0;background:var(--sidebar);display:flex;flex-direction:column;position:sticky;top:0;min-height:100%;overflow-y:auto}
+.sidebar-logo{padding:20px 16px 8px;font-size:15px;font-weight:600;color:#fff;letter-spacing:-.3px;line-height:1.2}
+
+/* MOBILE */
+@media(max-width:640px){
+  /* Login */
+  .login-box{width:100%;max-width:340px}
+  .user-grid{grid-template-columns:1fr 1fr}
+
+  /* App layout — sidebar nahoře jako spodní nav */
+  .app.visible{flex-direction:column}
+  .sidebar{width:100%;min-height:auto;position:sticky;top:0;z-index:100;flex-direction:column}
+  .sidebar-logo{padding:12px 16px 4px;font-size:14px}
+  .sidebar-logo span{display:none}
+  #sidebarNav{display:flex;flex-direction:row;overflow-x:auto;padding:4px 8px 8px;gap:2px}
+  #sidebarNav .sidebar-section{display:none}
+  .nav-item{padding:7px 10px;margin:0;white-space:nowrap;width:auto;font-size:12px;border-radius:6px}
+  .nav-icon{font-size:13px}
+  .sidebar-bottom{flex-direction:row;align-items:center;padding:8px 12px;border-top:1px solid rgba(255,255,255,.08);flex-wrap:wrap;gap:8px}
+  .sidebar-user{padding:0}
+  .logout-btn{width:auto;padding:5px 10px;font-size:11px}
+  #syncBtn{margin-top:0}
+  .sync-row{padding:5px 8px;border-top:none;margin-top:0}
+
+  /* Main content */
+  .main{flex:1;min-width:0;padding:28px 32px;width:100%}
+  .main-header h1{font-size:18px}
+  .metrics{grid-template-columns:1fr 1fr;gap:8px}
+
+  /* Calendar na mobilu */
+  .cal-dow span{font-size:9px;padding:2px 0}
+  .wk-num{font-size:10px;height:22px}
+  .pl{font-size:8px;height:16px;padding:0 3px}
+  .pl-sub{font-size:8px}
+  .td-circle{width:18px;height:18px;font-size:9px}
+
+  /* Cards */
+  .brow{padding:9px 11px;gap:9px}
+  .form-row{flex-direction:column}
+  .form-row input,.form-row select,.form-row textarea{width:100%}
+
+  /* Modals */
+  .modal{width:94vw;padding:16px}
+}
+.sidebar-logo span{display:block;font-size:11px;font-weight:400;color:rgba(255,255,255,.4);margin-top:3px}
+.sidebar-section{padding:16px 10px 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;margin:1px 6px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);border:none;background:transparent;width:calc(100% - 12px);text-align:left;transition:background .15s,color .15s}
+.nav-item:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.9)}
+.nav-item.on{background:rgba(255,255,255,.12);color:#fff}
+.nav-icon{font-size:14px;flex-shrink:0}
+.sidebar-bottom{margin-top:auto;padding:14px 10px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px}
+.sidebar-user{padding:8px 10px;font-size:12px;color:rgba(255,255,255,.5)}
+.sidebar-user strong{color:rgba(255,255,255,.8);display:block;font-size:13px;margin-bottom:1px}
+.sidebar-user .ha-pill{display:inline-block;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;margin-top:3px}
+.logout-btn{padding:7px 10px;border-radius:8px;border:none;background:rgba(255,255,255,.07);color:rgba(255,255,255,.5);font-size:12px;cursor:pointer;text-align:left;width:100%}
+.logout-btn:hover{background:rgba(255,255,255,.12)}
+.sync-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;background:transparent;border:none;width:100%;border-top:1px solid rgba(255,255,255,.06);margin-top:2px;padding-top:10px}
+.sync-row:hover{background:rgba(255,255,255,.06)}
+.sdot{width:7px;height:7px;border-radius:50%;background:#555;flex-shrink:0}
+.sdot.ok{background:var(--g)}.sdot.err{background:#e24b4a}
+.sdot.spin{background:var(--a);animation:pu 1s infinite}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-label{font-size:12px;color:rgba(255,255,255,.5);text-align:left}
+.sync-sub{font-size:10px;color:rgba(255,255,255,.3);margin-top:1px}
+
+/* MAIN */
+.main{flex:1;min-width:0;padding:28px 32px;width:100%}
+.main-header{margin-bottom:22px}
+.main-header h1{font-size:22px;font-weight:600;letter-spacing:-.4px}
+.pg{display:none}.pg.on{display:block}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.met{background:var(--bg2);border-radius:var(--r);padding:14px}
+.met .lb{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.met .vl{font-size:20px;font-weight:600;letter-spacing:-.4px}
+.met .sb{font-size:12px;color:var(--tx2);margin-top:2px}
+.met.hi .vl{color:var(--g)}
+.slbl{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.card{background:var(--bg);border:0.5px solid var(--br);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
+.brow{display:flex;align-items:center;gap:12px;padding:11px 14px}
+.ava{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.ava.bk{background:#dde9ff;color:#2c4a9e}.ava.ab{background:#fee2e2;color:#9b1c1c}
+.bi{flex:1;min-width:0}
+.bn{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd{font-size:11px;color:var(--tx2);margin-top:1px}
+.bm{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.bdg{font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px}
+.bdg.bk{background:#dde9ff;color:#2c4a9e}.bdg.ab{background:#fee2e2;color:#9b1c1c}
+.bdg.g{background:var(--gl);color:var(--gd)}
+.cwrap{position:relative;width:100%;height:180px;margin-bottom:24px}
+
+/* CALENDAR */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ctitle{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.cal-arrows{display:flex;gap:6px}
+.cal-arrows button{width:28px;height:28px;border:0.5px solid var(--br);background:var(--bg2);border-radius:var(--rm);color:var(--tx);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;line-height:1}
+.cal-legend{display:flex;gap:10px;padding:8px 12px;background:var(--bg2);border-radius:var(--rm);margin-bottom:12px}
+.cli{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2)}
+.clpill{height:11px;width:22px;border-radius:6px;flex-shrink:0}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:2px}
+.cal-dow span{font-size:11px;font-weight:500;color:var(--tx3);text-align:center;padding:3px 0}
+.cal-dow span.we{color:var(--bk)}
+.wk{position:relative;border-top:0.5px solid var(--br)}
+.wk-nums{display:grid;grid-template-columns:repeat(7,1fr)}
+.wk-num{display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--tx2);height:26px}
+.wk-num.we{background:var(--bgw)}
+.td-circle{width:21px;height:21px;background:var(--g);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.wk-pills{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none}
+.pl{position:absolute;height:20px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:500;color:#fff;overflow:hidden;white-space:nowrap;pointer-events:all;cursor:default}
+.pl.bk{background:var(--bk)}.pl.ab{background:var(--ab)}
+.pl-name{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pl-sub{position:absolute;font-size:9px;color:var(--tx3);white-space:nowrap;overflow:hidden;display:flex;align-items:center;gap:4px;pointer-events:all}
+.pl-sub-txt{overflow:hidden;text-overflow:ellipsis;min-width:0;flex-shrink:1}
+.warn-badge{display:inline-flex;align-items:center;gap:3px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:5px;font-size:9px;font-weight:700;padding:1px 5px;flex-shrink:0;cursor:pointer}
+.warn-badge:hover{background:#fde68a}
+.assign-btn{display:inline-flex;align-items:center;gap:3px;background:var(--g);color:#fff;border:none;border-radius:5px;font-size:9px;font-weight:600;padding:2px 6px;flex-shrink:0;cursor:pointer}
+.assign-btn:hover{background:var(--gd)}
+.nb{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;font-size:9px;cursor:pointer;border:none;flex-shrink:0;line-height:1}
+.nb.e{background:rgba(120,120,120,.2);color:var(--tx3)}.nb.e:hover{background:rgba(120,120,120,.35)}
+.nb.h{background:#f59e0b;color:#fff}.nb.h:hover{background:#d97706}
+.nt{position:relative;display:inline-flex;flex-shrink:0}
+.nt-tip{display:none;position:absolute;bottom:calc(100% + 5px);left:0;background:#1a1a2e;color:#fff;font-size:11px;padding:5px 9px;border-radius:7px;white-space:pre-wrap;max-width:200px;word-break:break-word;z-index:300;line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.35);pointer-events:none}
+.nt:hover .nt-tip{display:block}
+
+/* Modals */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--bg);border-radius:var(--r);padding:20px;width:320px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.modal h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.modal p{font-size:12px;color:var(--tx2);margin-bottom:14px}
+.modal textarea{width:100%;padding:9px 11px;border:0.5px solid var(--br);border-radius:var(--rm);font-size:13px;background:var(--bg2);color:var(--tx);resize:none;height:80px;font-family:inherit}
+.modal textarea:focus{outline:none;border-color:var(--g)}
+.modal-btns{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+.assign-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+.assign-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0.5px solid var(--br);border-radius:var(--rm);cursor:pointer;background:var(--bg2);transition:border-color .15s}
+.assign-opt:hover{border-color:var(--g)}
+.assign-opt .ao-av{width:32px;height:32px;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.assign-opt .ao-name{font-size:13px;font-weight:500}
+.assign-opt .ao-role{font-size:11px;color:var(--tx2)}
+
+/* Forms, tables */
+.form-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.form-row input,.form-row select,.form-row textarea{padding:8px 11px;border:0.5px solid var(--br);border-radius:var(--rm);font-size:13px;background:var(--bg);color:var(--tx);flex:1;min-width:80px}
+.form-row textarea{width:100%;resize:none;height:64px}
+.btn{padding:8px 16px;background:var(--tx);color:var(--bg);border:none;border-radius:var(--rm);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.btn.sec{background:transparent;color:var(--tx);border:0.5px solid var(--br)}
+.btn.danger{background:transparent;color:var(--rd);border:0.5px solid var(--rl)}
+.btn.green{background:var(--g);color:#fff}
+.btn.gold{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;border:none}
+.ei{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:var(--bg2);border-radius:var(--rm);margin-bottom:6px}
+.eil .ed{font-size:13px}.eil .em{font-size:11px;color:var(--tx3);margin-top:2px}.ea{font-size:13px;font-weight:600}
+.ibox{padding:11px 14px;background:var(--bg2);border-radius:var(--rm);font-size:13px;color:var(--tx2);line-height:1.6;margin-bottom:14px}
+.tt{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.tt th{text-align:left;padding:7px 10px;background:var(--bg2);color:var(--tx2);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.tt td{padding:9px 10px;border-bottom:0.5px solid var(--br)}.tt tr:last-child td{border:none}
+.ttot{display:flex;justify-content:space-between;padding:12px 14px;background:var(--gl);border-radius:var(--rm);margin-top:10px;font-size:13px;font-weight:600;color:var(--gd)}
+.sc{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--bg);border:0.5px solid var(--br);border-radius:var(--r);margin-bottom:8px}
+.sa{width:38px;height:38px;border-radius:50%;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wb{padding:10px 13px;background:var(--rl);border-radius:var(--rm);font-size:13px;color:var(--rd);margin-bottom:8px}
+.cli2{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:0.5px solid var(--br)}.cli2:last-child{border:none}
+.cli2 input{margin-top:2px;accent-color:var(--g)}.cli2 span{font-size:13px;line-height:1.4}
+.sr{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:0.5px solid var(--br)}.sr:last-child{border:none}
+.srl{font-size:14px}
+.sr input[type=text],.sr input[type=password]{width:180px;padding:7px 10px;border:0.5px solid var(--br);border-radius:var(--rm);font-size:13px;background:var(--bg);color:var(--tx)}
+.mbr{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.mb{padding:5px 11px;border:0.5px solid var(--br);border-radius:20px;font-size:12px;background:transparent;color:var(--tx2);cursor:pointer}
+.mb.on{background:var(--g);color:#fff;border-color:var(--g)}
+.sg{margin-bottom:22px}.empty{text-align:center;padding:28px 20px;color:var(--tx3);font-size:13px}
+
+/* User management (head admin) */
+.um-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg);border:0.5px solid var(--br);border-radius:var(--r);margin-bottom:8px}
+.um-av{width:38px;height:38px;border-radius:50%;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.um-info{flex:1}
+.um-name{font-size:13px;font-weight:500}
+.um-sub{font-size:11px;color:var(--tx2);margin-top:2px}
+.um-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.role-pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:5px}
+.role-pill.headadmin{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff}
+.role-pill.admin{background:#dde9ff;color:#2c4a9e}
+.role-pill.cleaner{background:var(--gl);color:var(--gd)}
+
+/* New user modal */
+.nu-form{display:flex;flex-direction:column;gap:10px;margin-bottom:4px}
+.nu-form input,.nu-form select{width:100%;padding:9px 11px;border:0.5px solid var(--br);border-radius:var(--rm);font-size:13px;background:var(--bg2);color:var(--tx)}
+.nu-form input:focus,.nu-form select:focus{outline:none;border-color:var(--g)}
+/* Receipt cards */
+.rc{background:var(--bg);border:0.5px solid var(--br);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.rc-img{width:100%;max-height:200px;object-fit:cover;display:block;cursor:pointer;background:#111}
+.rc-body{padding:11px 14px}
+.rc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.rc-desc{font-size:13px;font-weight:500;flex:1}
+.rc-amt{font-size:14px;font-weight:700;color:var(--g);white-space:nowrap}
+.rc-meta{font-size:11px;color:var(--tx3);margin-top:3px}
+.rc-actions{display:flex;gap:6px;margin-top:10px}
+</style>
+</head>
+<body>
+<div id="mozApp">
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">Mozartova 10</div>
+    <div class="login-sub" style="margin-bottom:28px">Vyberte svůj profil</div>
+    <div class="user-grid" id="userGrid"></div>
+    <div class="pin-section" id="pinSection" style="display:none">
+      <input
+        type="password"
+        id="pinInput"
+        inputmode="numeric"
+        maxlength="8"
+        placeholder="PIN"
+        autocomplete="off"
+        style="width:100%;padding:14px;text-align:center;font-size:22px;letter-spacing:6px;border:0.5px solid var(--br);border-radius:var(--rm);background:var(--bg2);color:var(--tx);outline:none;margin-bottom:12px"
+      />
+      <button id="pinSubmit" style="width:100%;padding:13px;background:var(--g);color:#fff;border:none;border-radius:var(--rm);font-size:15px;font-weight:600;cursor:pointer">Přihlásit se</button>
+      <div class="login-err" id="loginErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appWrap">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Mozartova 10<span id="sidebarSub">Správa apartmánu</span></div>
+    <div id="sidebarNav"></div>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user"><strong id="sidebarUser"></strong></div>
+      <button class="logout-btn" data-action="logout">Odhlásit se</button>
+      <div id="syncBtn" style="display:none">
+        <button class="sync-row" data-action="doSync">
+          <span class="sdot" id="sdot"></span>
+          <div style="text-align:left"><div class="sync-label" id="slbl">Synchronizovat</div><div class="sync-sub" id="lsync">Smoobu: nepřipojeno</div></div>
+        </button>
+      </div>
+    </div>
+  </aside>
+  <main class="main" id="mainArea">
+    <!-- Dashboard -->
+    <div id="pg-dash" class="pg">
+      <div class="main-header"><h1>Přehled</h1></div>
+      <div class="metrics" id="mm"></div>
+      <div class="sg"><div class="slbl">Obsazenost · 2025–2026</div>
+      <div class="cwrap"><canvas id="occ" role="img" aria-label="Obsazenost">Graf.</canvas></div></div>
+      <div class="slbl">Nadcházející rezervace</div><div id="mup"></div>
+    </div>
+    <!-- Calendar -->
+    <div id="pg-cal" class="pg">
+      <div class="cal-nav">
+        <span class="ctitle" id="clbl"></span>
+        <div class="cal-arrows"><button data-action="cPrev">&#8249;</button><button data-action="cNext">&#8250;</button></div>
+      </div>
+      <div id="calLegend" style="display:none"></div>
+      <div class="cal-dow"><span>Po</span><span>Út</span><span>St</span><span>Čt</span><span>Pá</span><span class="we">So</span><span class="we">Ne</span></div>
+      <div id="cbody"></div>
+    </div>
+    <!-- Fees -->
+    <div id="pg-fee" class="pg">
+      <div class="main-header"><h1>Turistické poplatky</h1></div>
+      <div class="ibox">Sazba: <strong>50 Kč / osoba / noc</strong> · Děti do 18 let osvobozeny</div>
+      <div class="mbr" id="fmonths"></div><div class="slbl" id="flbl"></div>
+      <div style="overflow-x:auto"><table class="tt">
+        <thead><tr><th>Host</th><th style="width:44px">Noci</th><th style="width:44px">Dosp.</th><th style="width:80px">Poplatek</th></tr></thead>
+        <tbody id="ftb"></tbody>
+      </table></div>
+      <div class="ttot" id="ftot"></div>
+    </div>
+    <!-- Expenses -->
+    <div id="pg-exp" class="pg">
+      <div class="main-header"><h1>Náklady</h1></div>
+      <div class="metrics" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:18px" id="exm"></div>
+      <div class="slbl">Nový výdaj</div>
+      <div class="card" style="padding:14px;margin-bottom:18px">
+        <div class="form-row"><input id="ed" placeholder="Popis výdaje" style="flex:2;min-width:100px"/><input id="ea" type="number" placeholder="Kč" style="max-width:80px"/></div>
+        <div class="form-row"><select id="ec"><option>Úklid</option><option>Opravy</option><option>Vybavení</option><option>Prádlo</option><option>Čistící prostředky</option><option>Ostatní</option></select><input id="ew" placeholder="Kdo nakoupil"/><button class="btn" data-action="addExp">Přidat</button></div>
+        <div class="form-row"><textarea id="en" placeholder="Poznámka..."></textarea></div>
+      </div>
+      <div class="slbl">Historie</div><div id="exl"></div>
+    </div>
+    <!-- Účtenky -->
+    <div id="pg-uctk" class="pg">
+      <div class="main-header"><h1>Účtenky</h1></div>
+
+      <div style="background:var(--bgw);border-radius:var(--r);padding:14px 16px;margin-bottom:20px;border:0.5px solid var(--br);font-size:13px;color:var(--tx2);line-height:1.9">
+        👉 Vyfoť účtenku · napiš částku · hotovo
+      </div>
+
+      <label for="receiptInput" id="receiptLabel" style="display:flex;align-items:center;justify-content:center;gap:12px;background:var(--g);color:#fff;border-radius:var(--r);padding:20px;font-size:17px;font-weight:600;cursor:pointer;margin-bottom:20px;transition:background .2s">
+        <span style="font-size:26px">📷</span> Vyfotit účtenku
+      </label>
+      <input type="file" id="receiptInput" accept="image/*" capture="environment" style="display:none" onchange="handleReceipt(event)">
+
+      <div id="receiptForm" style="display:none;background:var(--bg2);border-radius:var(--r);padding:16px;margin-bottom:24px">
+        <img id="receiptPreview" style="width:100%;max-height:260px;object-fit:contain;border-radius:var(--rm);margin-bottom:14px;background:#111"/>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <input id="rtAmt" type="number" placeholder="Částka Kč" inputmode="numeric"
+            style="flex:1;padding:12px 14px;border:0.5px solid var(--br);border-radius:var(--rm);font-size:18px;font-weight:600;background:var(--bg);color:var(--tx);text-align:center"/>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn sec" style="flex:1;padding:11px" data-action="cancelReceipt">Zrušit</button>
+          <button class="btn green" style="flex:2;padding:11px;font-size:15px" data-action="saveReceipt">✓ Uložit</button>
+        </div>
+      </div>
+
+      <div class="slbl" id="receiptListLbl" style="display:none">Nahrané účtenky</div>
+      <div id="receiptList"></div>
+    </div>
+    <div id="pg-staff" class="pg">
+      <div class="main-header"><h1>Tým</h1></div>
+      <div id="swarn"></div>
+      <div id="staff-admin-section" style="display:none">
+        <div class="slbl">Členové týmu</div>
+        <div id="slist"></div>
+        <button class="btn gold" style="width:100%;margin:8px 0 22px" data-action="openNewUser">+ Přidat uživatele</button>
+      </div>
+      <div class="slbl">Checklist · úklid</div>
+      <div class="card" style="padding:2px 14px 8px" id="chk"></div>
+      <button class="btn sec" style="width:100%;margin-top:12px" data-action="addCheck">+ Přidat bod</button>
+    </div>
+    <!-- Settings -->
+    <div id="pg-set" class="pg">
+      <div class="main-header"><h1>Nastavení</h1></div>
+      <div class="slbl">Smoobu API</div>
+      <div class="card" style="padding:14px;margin-bottom:22px">
+        <div class="form-row" style="margin-bottom:0"><input id="akey" type="password" placeholder="Váš Smoobu API klíč" style="flex:1"/><button class="btn" data-action="saveKey">Uložit</button></div>
+        <div style="font-size:12px;color:var(--tx3);margin-top:8px">Uložen jen ve vašem prohlížeči.</div>
+      </div>
+      <div class="slbl">Turistický poplatek</div>
+      <div class="card" style="padding:2px 14px;margin-bottom:22px">
+        <div class="sr"><div class="srl">Sazba za osobu / noc (Kč)</div><input type="text" id="srate" value="50" style="width:70px;text-align:right"/></div>
+      </div>
+      <div class="slbl">Barvy týmu</div>
+      <div class="card" style="padding:2px 14px;margin-bottom:22px" id="colset"></div>
+      <div id="mypin-section" class="card" style="padding:14px;margin-bottom:22px">
+        <div class="slbl" style="margin-bottom:12px">Změnit vlastní PIN</div>
+        <div class="form-row" style="margin-bottom:0">
+          <input type="password" id="newpin1" placeholder="Nový PIN (4 číslice)" maxlength="4" style="flex:1"/>
+          <input type="password" id="newpin2" placeholder="Zopakovat PIN" maxlength="4" style="flex:1"/>
+          <button class="btn green" data-action="changeMyPin">Uložit PIN</button>
+        </div>
+      </div>
+      <button class="btn danger" style="width:100%" data-action="clearData">Smazat lokální data</button>
+    </div>
+  </main>
+</div>
+
+<!-- Note modal -->
+<div class="overlay" id="noteOverlay" data-modal="noteOverlay" data-action="closeModal">
+  <div class="modal">
+    <h3>Poznámka k úklidu</h3>
+    <p id="noteSub"></p>
+    <textarea id="noteText" placeholder="Napište poznámku..."></textarea>
+    <div class="modal-btns">
+      <button class="btn sec" style="padding:7px 14px;font-size:13px" data-action="closeModal" data-modal="noteOverlay">Zrušit</button>
+      <button class="btn green" style="padding:7px 14px;font-size:13px" data-action="saveNote">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Assign modal -->
+<div class="overlay" id="assignOverlay" data-modal="assignOverlay" data-action="closeModal">
+  <div class="modal">
+    <h3>Přihlásit se na úklid</h3>
+    <p id="assignSub"></p>
+    <div class="assign-grid" id="assignGrid"></div>
+    <div class="modal-btns">
+      <button class="btn sec" style="padding:7px 14px;font-size:13px" data-action="closeModal" data-modal="assignOverlay">Zavřít</button>
+    </div>
+  </div>
+</div>
+
+<!-- New/Edit user modal -->
+<div class="overlay" id="userOverlay" data-modal="userOverlay" data-action="closeModal">
+  <div class="modal">
+    <h3 id="userModalTitle">Nový uživatel</h3>
+    <p style="font-size:12px;color:var(--tx2);margin-bottom:14px">Vyplňte údaje nového člena týmu.</p>
+    <div class="nu-form">
+      <input id="nu-name" placeholder="Jméno" />
+      <input id="nu-email" placeholder="E-mail (volitelné)" type="email" />
+      <select id="nu-role">
+        <option value="cleaner">Uklízečka</option>
+        <option value="admin">Admin</option>
+      </select>
+      <input id="nu-pin" id="nu-pin" placeholder="PIN (4 číslice — při úpravě nechte prázdné pro zachování)" maxlength="4" type="password" />
+      <div id="nu-color-row" style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:13px;color:var(--tx2)">Barva:</span>
+        <input type="color" id="nu-color" value="#16a34a" style="width:40px;height:32px;border:none;padding:0;cursor:pointer"/>
+      </div>
+    </div>
+    <div id="nu-err" style="font-size:12px;color:var(--rd);min-height:16px;margin-top:4px"></div>
+    <div class="modal-btns">
+      <button class="btn sec" style="padding:7px 14px;font-size:13px" data-action="closeModal" data-modal="userOverlay">Zrušit</button>
+      <button class="btn gold" style="padding:7px 14px;font-size:13px" data-action="saveNewUser">Uložit</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /mozApp -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const BK=[
+  {n:'Tomas Vavro',ci:'2025-05-29',co:'2025-05-29',g:2,c:0,s:'booking',cl:[]},
+  {n:'Dimitris Amvrazis',ci:'2025-05-30',co:'2025-06-01',g:3,c:0,s:'booking',cl:[]},
+  {n:'Yari Heinemann',ci:'2025-06-06',co:'2025-06-08',g:3,c:0,s:'booking',cl:['2025-06-08']},
+  {n:'Petra Vyskotová',ci:'2025-06-11',co:'2025-06-11',g:3,c:2,s:'booking',cl:['2025-06-11']},
+  {n:'Khidashelli Tinatin',ci:'2025-06-12',co:'2025-06-13',g:2,c:1,s:'booking',cl:['2025-06-12']},
+  {n:'Vladimíra Procházková',ci:'2025-06-14',co:'2025-06-15',g:2,c:1,s:'booking',cl:['2025-06-14']},
+  {n:'Roman Donhauser',ci:'2025-06-19',co:'2025-06-21',g:4,c:2,s:'booking',cl:[]},
+  {n:'Tomáš Horáček',ci:'2025-06-26',co:'2025-06-26',g:1,c:0,s:'booking',cl:[]},
+  {n:'František Uzel',ci:'2025-06-27',co:'2025-06-28',g:4,c:2,s:'booking',cl:['2025-06-27']},
+  {n:'Anastazja Kudla Booking',ci:'2025-07-03',co:'2025-07-05',g:4,c:0,s:'booking',cl:[]},
+  {n:'Michal Kuráň',ci:'2025-07-08',co:'2025-07-09',g:4,c:2,s:'booking',cl:[]},
+  {n:'Nitai Levy',ci:'2025-07-11',co:'2025-07-17',g:0,c:0,s:'booking',cl:[]},
+  {n:'Sidorova Elena',ci:'2025-07-18',co:'2025-07-18',g:4,c:2,s:'booking',cl:['2025-07-18']},
+  {n:'Stephan Thaller',ci:'2025-07-19',co:'2025-07-19',g:3,c:1,s:'booking',cl:['2025-07-19']},
+  {n:'Marta Andraka',ci:'2025-07-20',co:'2025-07-20',g:4,c:2,s:'booking',cl:['2025-07-20']},
+  {n:'Josef Prášil',ci:'2025-07-21',co:'2025-07-21',g:3,c:1,s:'booking',cl:['2025-07-21']},
+  {n:'Dan Santana Proveza',ci:'2025-07-22',co:'2025-07-22',g:4,c:2,s:'booking',cl:['2025-07-22']},
+  {n:'Nadine Mannß',ci:'2025-07-23',co:'2025-07-24',g:3,c:1,s:'booking',cl:['2025-07-23']},
+  {n:'David Habr',ci:'2025-07-25',co:'2025-07-25',g:2,c:1,s:'booking',cl:['2025-07-25']},
+  {n:'Johannes Holfeld',ci:'2025-07-26',co:'2025-07-26',g:4,c:2,s:'booking',cl:['2025-07-26']},
+  {n:'Attila Poltl',ci:'2025-07-27',co:'2025-07-28',g:4,c:2,s:'booking',cl:['2025-07-27']},
+  {n:'Katarzyna Maruszewska-Dalecka',ci:'2025-07-29',co:'2025-07-31',g:4,c:2,s:'booking',cl:['2025-07-29']},
+  {n:'Andrea Tatafiore',ci:'2025-08-01',co:'2025-08-01',g:4,c:0,s:'booking',cl:['2025-08-01']},
+  {n:'Grzegorz Ciucias',ci:'2025-08-02',co:'2025-08-02',g:4,c:0,s:'booking',cl:['2025-08-02']},
+  {n:'Lukáš Krišpín',ci:'2025-08-03',co:'2025-08-03',g:2,c:0,s:'booking',cl:['2025-08-03']},
+  {n:'Miroslav Kubica',ci:'2025-08-04',co:'2025-08-04',g:4,c:0,s:'booking',cl:['2025-08-04']},
+  {n:'Michal Láryš',ci:'2025-08-05',co:'2025-08-06',g:3,c:1,s:'booking',cl:['2025-08-05']},
+  {n:'Kveta Zelingerová',ci:'2025-08-07',co:'2025-08-07',g:3,c:2,s:'booking',cl:['2025-08-07']},
+  {n:'Oded Korach',ci:'2025-08-08',co:'2025-08-08',g:3,c:1,s:'airbnb',cl:['2025-08-08']},
+  {n:'Tatsiana Bahdanovich',ci:'2025-08-09',co:'2025-08-09',g:4,c:1,s:'booking',cl:['2025-08-09']},
+  {n:'Klymenko Alona',ci:'2025-08-10',co:'2025-08-12',g:4,c:2,s:'booking',cl:['2025-08-10']},
+  {n:'Barbara Urlacher',ci:'2025-08-13',co:'2025-08-18',g:3,c:0,s:'booking',cl:['2025-08-13']},
+  {n:'Petra Garajová',ci:'2025-08-19',co:'2025-08-19',g:4,c:0,s:'booking',cl:['2025-08-19']},
+  {n:'Polina Tkachenko',ci:'2025-08-20',co:'2025-08-20',g:4,c:2,s:'booking',cl:['2025-08-20']},
+  {n:'MILENA RYBICKA',ci:'2025-08-21',co:'2025-08-22',g:4,c:2,s:'booking',cl:['2025-08-21']},
+  {n:'Darya Tsitok',ci:'2025-08-23',co:'2025-08-23',g:4,c:0,s:'booking',cl:['2025-08-23']},
+  {n:'Marina Sommerfeld',ci:'2025-08-24',co:'2025-08-24',g:2,c:0,s:'airbnb',cl:['2025-08-24']},
+  {n:'Denis Figura',ci:'2025-08-25',co:'2025-08-25',g:2,c:0,s:'airbnb',cl:['2025-08-25']},
+  {n:'Bára Kavuloková',ci:'2025-08-26',co:'2025-08-26',g:4,c:0,s:'booking',cl:['2025-08-26']},
+  {n:'Marianna Koźlik',ci:'2025-08-27',co:'2025-08-27',g:4,c:2,s:'booking',cl:['2025-08-27']},
+  {n:'Bartlomiej Rakowski',ci:'2025-08-28',co:'2025-08-28',g:2,c:0,s:'airbnb',cl:['2025-08-28']},
+  {n:'Soňa Dušková',ci:'2025-08-29',co:'2025-08-29',g:3,c:0,s:'booking',cl:['2025-08-29']},
+  {n:'sunny patel',ci:'2025-08-30',co:'2025-08-30',g:4,c:0,s:'booking',cl:['2025-08-30']},
+  {n:'Renzen Tim',ci:'2025-08-31',co:'2025-09-01',g:3,c:0,s:'booking',cl:['2025-08-31']},
+  {n:'Barbara Kantorova',ci:'2025-09-02',co:'2025-09-07',g:1,c:0,s:'booking',cl:['2025-09-02']},
+  {n:'Marika Luchetti',ci:'2025-09-08',co:'2025-09-09',g:2,c:0,s:'airbnb',cl:['2025-09-08']},
+  {n:'Antonia Duchting',ci:'2025-09-10',co:'2025-09-11',g:2,c:0,s:'airbnb',cl:['2025-09-10']},
+  {n:'Dennis Sherif Adedokun Kilani',ci:'2025-09-12',co:'2025-09-13',g:2,c:0,s:'airbnb',cl:['2025-09-12']},
+  {n:'Jessica Meneses Silva Oliveira',ci:'2025-09-14',co:'2025-09-16',g:3,c:0,s:'airbnb',cl:['2025-09-14']},
+  {n:'Amr Amin',ci:'2025-09-17',co:'2025-09-18',g:1,c:0,s:'booking',cl:['2025-09-17']},
+  {n:'Daniel Kirvej',ci:'2025-09-19',co:'2025-09-19',g:3,c:0,s:'booking',cl:['2025-09-19']},
+  {n:'Vojtěch Nekoranec',ci:'2025-09-20',co:'2025-09-20',g:0,c:0,s:'booking',cl:['2025-09-20']},
+  {n:'Veronika Venclikova',ci:'2025-09-22',co:'2025-09-23',g:2,c:1,s:'airbnb',cl:[]},
+  {n:'Barbara Lemay',ci:'2025-09-24',co:'2025-09-28',g:3,c:0,s:'booking',cl:['2025-09-24']},
+  {n:'Roman Horejs',ci:'2025-09-29',co:'2025-09-29',g:2,c:0,s:'booking',cl:['2025-09-29']},
+  {n:'Veronika Venclikova',ci:'2025-09-30',co:'2025-09-30',g:2,c:1,s:'airbnb',cl:['2025-09-30']},
+  {n:'Dina Sultanova',ci:'2025-10-01',co:'2025-10-02',g:2,c:0,s:'booking',cl:['2025-10-01']},
+  {n:'Kasia Okopna',ci:'2025-10-03',co:'2025-10-04',g:4,c:0,s:'booking',cl:['2025-10-03']},
+  {n:'Veronika Venclikova',ci:'2025-10-05',co:'2025-10-07',g:2,c:1,s:'airbnb',cl:['2025-10-05']},
+  {n:'Viktoria Slovakova',ci:'2025-10-08',co:'2025-10-11',g:3,c:0,s:'booking',cl:['2025-10-08']},
+  {n:'Veronika Venclikova',ci:'2025-10-12',co:'2025-10-12',g:1,c:0,s:'airbnb',cl:['2025-10-12']},
+  {n:'Rocco Klinke',ci:'2025-10-13',co:'2025-10-13',g:4,c:2,s:'booking',cl:['2025-10-13']},
+  {n:'Anna Krajcikova',ci:'2025-10-14',co:'2025-10-14',g:4,c:2,s:'booking',cl:['2025-10-14']},
+  {n:'Dominika Matějková',ci:'2025-10-15',co:'2025-10-16',g:1,c:0,s:'airbnb',cl:['2025-10-15']},
+  {n:'Amy Phillips',ci:'2025-10-17',co:'2025-10-18',g:3,c:0,s:'airbnb',cl:['2025-10-17']},
+  {n:'Vojtěch Kliment',ci:'2025-10-19',co:'2025-10-20',g:2,c:0,s:'booking',cl:['2025-10-19']},
+  {n:'Dominik Žáček',ci:'2025-10-21',co:'2025-10-21',g:2,c:0,s:'airbnb',cl:['2025-10-21']},
+  {n:'Serge Tikhomirov',ci:'2025-10-22',co:'2025-10-22',g:2,c:0,s:'booking',cl:['2025-10-22']},
+  {n:'Krishna Aryal',ci:'2025-10-24',co:'2025-10-24',g:3,c:0,s:'booking',cl:[]},
+  {n:'Oliwier Czerniachowicz',ci:'2025-10-25',co:'2025-10-25',g:4,c:3,s:'booking',cl:['2025-10-25']},
+  {n:'Lenka Kudláčová',ci:'2025-10-26',co:'2025-10-27',g:4,c:2,s:'booking',cl:['2025-10-26']},
+  {n:'Matías López Marrero',ci:'2025-10-28',co:'2025-10-28',g:4,c:0,s:'booking',cl:['2025-10-28']},
+  {n:'Alena Čurdlová',ci:'2025-10-30',co:'2025-10-31',g:3,c:1,s:'booking',cl:[]},
+  {n:'Tereza Gronychová',ci:'2025-11-01',co:'2025-11-01',g:4,c:0,s:'booking',cl:['2025-11-01']},
+  {n:'Nikola Kolarczyková',ci:'2025-11-05',co:'2025-11-05',g:3,c:0,s:'airbnb',cl:[]},
+  {n:'Nikodem Kasprzak',ci:'2025-11-07',co:'2025-11-09',g:4,c:3,s:'booking',cl:[]},
+  {n:'Fonnegra David',ci:'2025-11-10',co:'2025-11-10',g:4,c:0,s:'booking',cl:['2025-11-10']},
+  {n:'Matej Gric',ci:'2025-11-11',co:'2025-11-13',g:2,c:0,s:'airbnb',cl:['2025-11-11']},
+  {n:'Lisa Selzer',ci:'2025-11-14',co:'2025-11-15',g:4,c:0,s:'booking',cl:['2025-11-14']},
+  {n:'Michael Bloch',ci:'2025-11-19',co:'2025-11-20',g:1,c:0,s:'airbnb',cl:[]},
+  {n:'Veronika Březinová',ci:'2025-11-21',co:'2025-11-21',g:2,c:0,s:'booking',cl:['2025-11-21']},
+  {n:'dubey parisa',ci:'2025-11-22',co:'2025-11-22',g:3,c:0,s:'booking',cl:['2025-11-22']},
+  {n:'Helena Korecka',ci:'2025-11-25',co:'2025-11-25',g:3,c:0,s:'booking',cl:[]},
+  {n:'Pedro Madureira',ci:'2025-11-27',co:'2025-11-29',g:2,c:0,s:'booking',cl:[]},
+  {n:'Valentуna Boiarska',ci:'2025-12-01',co:'2025-12-01',g:4,c:0,s:'booking',cl:['2025-12-01']},
+  {n:'Tomáš STANĚK',ci:'2025-12-02',co:'2025-12-02',g:3,c:1,s:'booking',cl:['2025-12-02']},
+  {n:'Dominik Drobný',ci:'2025-12-03',co:'2025-12-03',g:1,c:0,s:'airbnb',cl:['2025-12-03']},
+  {n:'Janusz Wilczyński',ci:'2025-12-04',co:'2025-12-04',g:2,c:0,s:'booking',cl:['2025-12-04']},
+  {n:'Johannes Moser',ci:'2025-12-05',co:'2025-12-06',g:3,c:0,s:'booking',cl:['2025-12-05']},
+  {n:'Дарина Ільтьо (Darina',ci:'2025-12-07',co:'2025-12-07',g:4,c:0,s:'booking',cl:['2025-12-07']},
+  {n:'Barbora Jancíková',ci:'2025-12-08',co:'2025-12-08',g:2,c:0,s:'booking',cl:['2025-12-08']},
+  {n:'Zuzana Smržová',ci:'2025-12-09',co:'2025-12-09',g:3,c:0,s:'booking',cl:['2025-12-09']},
+  {n:'pavel bonk',ci:'2025-12-10',co:'2025-12-10',g:1,c:0,s:'booking',cl:['2025-12-10']},
+  {n:'JIRI HAVLICEK',ci:'2025-12-11',co:'2025-12-11',g:1,c:0,s:'booking',cl:['2025-12-11']},
+  {n:'Alexander Gurský',ci:'2025-12-12',co:'2025-12-12',g:3,c:1,s:'booking',cl:['2025-12-12']},
+  {n:'Beata Bartosiak',ci:'2025-12-13',co:'2025-12-13',g:3,c:0,s:'booking',cl:['2025-12-13']},
+  {n:'patrick van der stel',ci:'2025-12-14',co:'2025-12-14',g:3,c:1,s:'booking',cl:['2025-12-14']},
+  {n:'Velyka Lesya',ci:'2025-12-15',co:'2025-12-17',g:4,c:2,s:'booking',cl:['2025-12-15']},
+  {n:'Jan Gartner',ci:'2025-12-18',co:'2025-12-18',g:0,c:0,s:'airbnb',cl:['2025-12-18']},
+  {n:'FRANCESCO sica',ci:'2025-12-19',co:'2025-12-20',g:4,c:2,s:'booking',cl:['2025-12-19']},
+  {n:'Florin Vescan',ci:'2025-12-21',co:'2025-12-21',g:4,c:2,s:'booking',cl:['2025-12-21']},
+  {n:'Aisylu Shakirova',ci:'2025-12-23',co:'2025-12-24',g:4,c:1,s:'booking',cl:[]},
+  {n:'Dmytro Koval',ci:'2025-12-25',co:'2025-12-26',g:3,c:1,s:'booking',cl:['2025-12-25']},
+  {n:'Роман Крючков',ci:'2025-12-27',co:'2025-12-27',g:3,c:1,s:'booking',cl:['2025-12-27']},
+  {n:'Pavel Skála',ci:'2025-12-28',co:'2025-12-29',g:4,c:2,s:'booking',cl:['2025-12-28']},
+  {n:'Jakub Hromas',ci:'2025-12-30',co:'2025-12-30',g:4,c:0,s:'booking',cl:['2025-12-30']},
+  {n:'Veronika Bartonitschek',ci:'2025-12-31',co:'2026-01-03',g:2,c:0,s:'booking',cl:['2025-12-31']},
+  {n:'pan Igor (Игорь Шнур)',ci:'2026-01-05',co:'2026-01-05',g:2,c:0,s:'booking',cl:[]},
+  {n:'Helena Kartik',ci:'2026-01-08',co:'2026-01-08',g:1,c:0,s:'airbnb',cl:[]},
+  {n:'Nikola Brillova',ci:'2026-01-10',co:'2026-01-12',g:4,c:0,s:'booking',cl:[]},
+  {n:'Samantha Gehlfuß',ci:'2026-01-16',co:'2026-01-17',g:3,c:0,s:'booking',cl:[]},
+  {n:'Francesco Rossi',ci:'2026-01-21',co:'2026-01-21',g:1,c:0,s:'booking',cl:[]},
+  {n:'Veronika Mackova',ci:'2026-01-23',co:'2026-01-23',g:1,c:0,s:'booking',cl:[]},
+  {n:'Jaromír Urbanek',ci:'2026-01-24',co:'2026-01-24',g:3,c:0,s:'booking',cl:['2026-01-24']},
+  {n:'David Miticky',ci:'2026-01-27',co:'2026-01-27',g:1,c:0,s:'booking',cl:[]},
+  {n:'Monika Přečková',ci:'2026-01-30',co:'2026-01-31',g:4,c:2,s:'booking',cl:[]},
+  {n:'Sara Cunha',ci:'2026-02-05',co:'2026-02-07',g:4,c:0,s:'booking',cl:[]},
+  {n:'Lucie Fojtíková',ci:'2026-02-10',co:'2026-02-10',g:2,c:0,s:'airbnb',cl:[]},
+  {n:'Adéla Lenčová',ci:'2026-02-11',co:'2026-02-11',g:2,c:0,s:'airbnb',cl:['2026-02-11']},
+  {n:'Marie Kozelská',ci:'2026-02-12',co:'2026-02-12',g:4,c:0,s:'booking',cl:['2026-02-12']},
+  {n:'Dorotka Martinková',ci:'2026-02-13',co:'2026-02-13',g:3,c:0,s:'airbnb',cl:['2026-02-13']},
+  {n:'Felix Tscharntke',ci:'2026-02-14',co:'2026-02-14',g:4,c:0,s:'booking',cl:['2026-02-14']},
+  {n:'Lucie Goldmannová',ci:'2026-02-18',co:'2026-02-18',g:3,c:1,s:'booking',cl:[]},
+  {n:'Ivana Dvorská',ci:'2026-02-19',co:'2026-02-20',g:4,c:2,s:'booking',cl:['2026-02-19']},
+  {n:'Gabriela Markiewicz',ci:'2026-02-21',co:'2026-02-21',g:3,c:0,s:'airbnb',cl:['2026-02-21']},
+  {n:'Monika Lincova',ci:'2026-02-22',co:'2026-02-22',g:2,c:0,s:'airbnb',cl:['2026-02-22']},
+  {n:'Petr Fojt',ci:'2026-02-23',co:'2026-02-23',g:2,c:0,s:'airbnb',cl:['2026-02-23']},
+  {n:'Savgi Nur Dogan',ci:'2026-02-24',co:'2026-02-25',g:2,c:0,s:'airbnb',cl:['2026-02-24']},
+  {n:'Karel Sylvar',ci:'2026-02-26',co:'2026-02-26',g:1,c:0,s:'booking',cl:['2026-02-26']},
+  {n:'Martin Tribula',ci:'2026-02-27',co:'2026-02-28',g:4,c:0,s:'booking',cl:['2026-02-27']},
+  {n:'Tom',ci:'2026-03-01',co:'2026-03-01',g:0,c:0,s:'booking',cl:['2026-03-01']},
+  {n:'Karel Jiránek',ci:'2026-03-02',co:'2026-03-02',g:2,c:0,s:'booking',cl:['2026-03-02']},
+  {n:'Maria Luft',ci:'2026-03-03',co:'2026-03-04',g:1,c:0,s:'airbnb',cl:['2026-03-03']},
+  {n:'Eszter Máthé',ci:'2026-03-05',co:'2026-03-07',g:3,c:0,s:'booking',cl:['2026-03-05']},
+  {n:'Marie Rajtová',ci:'2026-03-08',co:'2026-03-08',g:4,c:2,s:'booking',cl:['2026-03-08']},
+  {n:'Matěj Mašek',ci:'2026-03-10',co:'2026-03-11',g:1,c:0,s:'airbnb',cl:['2026-03-10']},
+  {n:'Lenka Lušovská',ci:'2026-03-12',co:'2026-03-14',g:4,c:2,s:'booking',cl:['2026-03-12']},
+  {n:'Filip Manina',ci:'2026-03-15',co:'2026-03-15',g:1,c:0,s:'airbnb',cl:['2026-03-15']},
+  {n:'Ondřej Nekvinda',ci:'2026-03-16',co:'2026-03-19',g:1,c:0,s:'airbnb',cl:['2026-03-16']},
+  {n:'Matylda Adamczyk',ci:'2026-03-20',co:'2026-03-21',g:4,c:0,s:'booking',cl:['2026-03-20']},
+  {n:'Jenny Chen',ci:'2026-03-22',co:'2026-03-25',g:2,c:0,s:'airbnb',cl:['2026-03-22']},
+  {n:'Katarzyna Knoll-Düvel',ci:'2026-03-26',co:'2026-03-28',g:4,c:0,s:'booking',cl:['2026-03-26']},
+  {n:'Tereza Spilková',ci:'2026-03-29',co:'2026-03-29',g:2,c:0,s:'airbnb',cl:['2026-03-29']},
+  {n:'Michal Visilijak',ci:'2026-03-30',co:'2026-03-30',g:2,c:0,s:'booking',cl:['2026-03-30']},
+  {n:'Tom Hach',ci:'2026-03-31',co:'2026-03-31',g:0,c:0,s:'booking',cl:['2026-03-31']},
+  {n:'Barbora Svobodová',ci:'2026-04-02',co:'2026-04-02',g:2,c:0,s:'airbnb',cl:['2026-04-02']},
+  {n:'Elfer Jiří',ci:'2026-04-03',co:'2026-04-04',g:3,c:0,s:'airbnb',cl:['2026-04-03']},
+  {n:'Lukáš Heger',ci:'2026-04-05',co:'2026-04-05',g:2,c:0,s:'airbnb',cl:['2026-04-05']},
+  {n:'Ivan Kozlov',ci:'2026-04-06',co:'2026-04-09',g:3,c:0,s:'booking',cl:['2026-04-06']},
+  {n:'Kateřina Štolpová',ci:'2026-04-10',co:'2026-04-10',g:2,c:0,s:'airbnb',cl:['2026-04-10']},
+  {n:'Tyas Hermans',ci:'2026-04-11',co:'2026-04-14',g:4,c:0,s:'booking',cl:['2026-04-11']},
+  {n:'Elina',ci:'2026-04-15',co:'2026-04-15',g:2,c:0,s:'airbnb',cl:['2026-04-15']},
+  {n:'Filip Omylak',ci:'2026-04-16',co:'2026-04-16',g:1,c:0,s:'booking',cl:['2026-04-16']},
+  {n:'Miroslava Neužilová',ci:'2026-04-17',co:'2026-04-18',g:3,c:0,s:'booking',cl:['2026-04-17']},
+  {n:'Eduard',ci:'2026-04-19',co:'2026-04-19',g:1,c:0,s:'airbnb',cl:['2026-04-19']},
+  {n:'Zuzana Flašarová',ci:'2026-04-20',co:'2026-04-20',g:1,c:0,s:'airbnb',cl:['2026-04-20']},
+  {n:'Thea Sørensen',ci:'2026-04-21',co:'2026-04-24',g:3,c:0,s:'booking',cl:['2026-04-21']},
+  {n:'Andrea Knapcová',ci:'2026-04-25',co:'2026-04-25',g:4,c:0,s:'airbnb',cl:['2026-04-25']},
+  {n:'Terezie Plevkova',ci:'2026-04-26',co:'2026-04-26',g:3,c:0,s:'airbnb',cl:['2026-04-26']},
+  {n:'Denys Ivashko',ci:'2026-04-27',co:'2026-04-27',g:2,c:0,s:'booking',cl:['2026-04-27']},
+  {n:'Cuborn Butler',ci:'2026-04-28',co:'2026-04-28',g:3,c:0,s:'airbnb',cl:['2026-04-28']},
+  {n:'Natalia Zając',ci:'2026-04-29',co:'2026-04-29',g:4,c:0,s:'booking',cl:['2026-04-29']},
+  {n:'Simona Kubanova',ci:'2026-04-30',co:'2026-05-01',g:4,c:2,s:'booking',cl:['2026-04-30','2026-05-01']},
+  {n:'Julia Gołąbek',ci:'2026-05-02',co:'2026-05-03',g:3,c:0,s:'airbnb',cl:[]},
+  {n:'Divya Khandelwal',ci:'2026-05-04',co:'2026-05-07',g:3,c:0,s:'booking',cl:['2026-05-04']},
+  {n:'Serhii Dvernik',ci:'2026-05-08',co:'2026-05-08',g:2,c:0,s:'booking',cl:['2026-05-08']},
+  {n:'Luiza Wołowicka',ci:'2026-05-09',co:'2026-05-10',g:2,c:0,s:'booking',cl:['2026-05-09']},
+  {n:'Szokolay Gábor',ci:'2026-05-11',co:'2026-05-12',g:3,c:0,s:'booking',cl:['2026-05-11']},
+  {n:'Matthias',ci:'2026-05-15',co:'2026-05-16',g:2,c:0,s:'airbnb',cl:[]},
+  {n:'Pán z Číny',ci:'2026-05-17',co:'2026-05-17',g:4,c:0,s:'airbnb',cl:['2026-05-17']},
+  {n:'Stefano Biosa',ci:'2026-05-18',co:'2026-05-18',g:2,c:0,s:'booking',cl:['2026-05-18']},
+  {n:'Anna Sýkorová',ci:'2026-05-19',co:'2026-05-19',g:2,c:0,s:'airbnb',cl:['2026-05-19']},
+  {n:'Tony Gildea',ci:'2026-05-22',co:'2026-05-25',g:2,c:0,s:'airbnb',cl:[]},
+  {n:'Valeria Marchetti',ci:'2026-05-26',co:'2026-05-27',g:4,c:0,s:'booking',cl:['2026-05-26']},
+  {n:'Antonia Leiher',ci:'2026-05-28',co:'2026-05-30',g:2,c:0,s:'airbnb',cl:['2026-05-28']},
+  {n:'Carina Edlund',ci:'2026-05-31',co:'2026-06-02',g:2,c:0,s:'airbnb',cl:['2026-05-31']},
+  {n:'Florian Wien',ci:'2026-06-05',co:'2026-06-06',g:2,c:0,s:'airbnb',cl:[]},
+  {n:'Chełstowska Amelia',ci:'2026-06-07',co:'2026-06-10',g:4,c:0,s:'booking',cl:['2026-06-07']},
+  {n:'Hanka Bálková',ci:'2026-06-12',co:'2026-06-13',g:4,c:0,s:'booking',cl:[]},
+  {n:'Edgar Bock',ci:'2026-06-14',co:'2026-06-14',g:2,c:0,s:'booking',cl:['2026-06-14']},
+  {n:'Edgar abock',ci:'2026-06-15',co:'2026-06-15',g:2,c:0,s:'booking',cl:[]},
+  {n:'Christoph Gratz',ci:'2026-06-16',co:'2026-06-18',g:2,c:0,s:'airbnb',cl:[]},
+  {n:'Tomasz Bieloc',ci:'2026-06-19',co:'2026-06-20',g:2,c:0,s:'booking',cl:['2026-06-19']},
+  {n:'Napoleonas Brazenas',ci:'2026-06-21',co:'2026-06-22',g:4,c:2,s:'booking',cl:['2026-06-21']},
+  {n:'Klaudia Służewska',ci:'2026-06-24',co:'2026-06-26',g:4,c:0,s:'booking',cl:[]},
+  {n:'Gabriela Maryšková',ci:'2026-06-27',co:'2026-06-27',g:3,c:0,s:'booking',cl:['2026-06-27']},
+  {n:'Carolina Bragança',ci:'2026-07-01',co:'2026-07-02',g:4,c:2,s:'booking',cl:[]},
+  {n:'Maria Calvo',ci:'2026-07-03',co:'2026-07-05',g:4,c:0,s:'booking',cl:['2026-07-03']},
+  {n:'Ховайба Вероника',ci:'2026-07-11',co:'2026-07-11',g:2,c:2,s:'booking',cl:[]},
+  {n:'Liene Grenevica',ci:'2026-07-12',co:'2026-07-13',g:4,c:2,s:'booking',cl:['2026-07-12']},
+  {n:'Christoffer',ci:'2026-07-19',co:'2026-07-20',g:3,c:0,s:'booking',cl:[]},
+  {n:'Dominika Gulinska',ci:'2026-07-21',co:'2026-07-22',g:2,c:0,s:'booking',cl:['2026-07-21']},
+  {n:'Jacob Göring',ci:'2026-07-23',co:'2026-07-25',g:3,c:0,s:'airbnb',cl:['2026-07-23']},
+  {n:'Emil Koch',ci:'2026-07-26',co:'2026-07-28',g:2,c:0,s:'airbnb',cl:['2026-07-26']},
+  {n:'Isabelle Tazibt',ci:'2026-07-31',co:'2026-08-02',g:3,c:0,s:'airbnb',cl:[]},
+  {n:'Moritz Jansohn',ci:'2026-08-10',co:'2026-08-13',g:2,c:0,s:'booking',cl:[]},
+  {n:'Kateryna Savchynska',ci:'2026-08-15',co:'2026-08-17',g:2,c:0,s:'booking',cl:[]},
+  {n:'Fred Gressie',ci:'2026-08-19',co:'2026-08-21',g:4,c:2,s:'booking',cl:[]},
+  {n:'Tamara Kiššová',ci:'2026-08-28',co:'2026-08-28',g:4,c:0,s:'booking',cl:[]},
+  {n:'Queenie Bruce',ci:'2026-09-07',co:'2026-09-10',g:2,c:0,s:'booking',cl:[]},
+  {n:'Mirjam Zettelmeier',ci:'2026-10-01',co:'2026-10-03',g:2,c:0,s:'booking',cl:[]},
+  {n:'Alban Bernard',ci:'2026-10-05',co:'2026-10-06',g:2,c:0,s:'airbnb',cl:[]},
+  {n:'Ellis',ci:'2026-10-18',co:'2026-10-20',g:2,c:0,s:'booking',cl:[]},
+  {n:'Vladimíra Bestová',ci:'2026-11-13',co:'2026-11-14',g:4,c:0,s:'airbnb',cl:[]},
+  {n:'Mariana Török',ci:'2026-11-16',co:'2026-11-17',g:2,c:0,s:'booking',cl:[]}
+];
+
+const MCZ=['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+
+// Shoptet fix — hned přesuneme #mozApp do body jako fullscreen overlay
+(function(){
+  function fixLayout(){
+    const app=document.getElementById('mozApp');
+    if(!app)return;
+    document.body.appendChild(app);
+    app.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:99999;overflow:auto;background:#fff;display:block';
+    Array.from(document.body.children).forEach(el=>{
+      if(el.id!=='mozApp')el.style.display='none';
+    });
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',fixLayout);
+  } else {
+    fixLayout();
+  }
+})();
+
+// HEAD ADMIN is always seeded — never editable by others, never deletable
+const HEAD_ADMIN={
+  id:'ha_lubo',
+  name:'Lubo',
+  email:'lnouzak@gmail.com',
+  role:'headAdmin',
+  pin:'9991',
+  color:'#e85d04'
+};
+
+const DEFAULT_USERS=[
+  {id:'admin2',name:'Pája',   role:'admin',  pin:'5678',color:'#3b5bdb'},
+  {id:'cln1',  name:'Eva',    role:'cleaner',pin:'8744',color:'#00bcd4'},
+  {id:'cln2',  name:'Kačka',  role:'cleaner',pin:'8744',color:'#e91e8c'},
+  {id:'simon', name:'Šimon',  role:'cleaner',pin:'0000',color:'#c9b800'},
+];
+
+let S={
+  bookings:BK,
+  expenses:[
+    {id:1,desc:'Povlečení LIDL',amount:120,cat:'Prádlo',who:'Pája',date:'2025-06-17',note:''},
+    {id:2,desc:'Úklid – Martina',amount:400,cat:'Úklid',who:'Martina',date:'2025-06-15',note:''},
+    {id:3,desc:'Povlečení sada',amount:600,cat:'Prádlo',who:'Eva',date:'2025-06-14',note:'4 sady'},
+  ],
+  users:JSON.parse(JSON.stringify(DEFAULT_USERS)),
+  assignments:{"a_2025-11-16_2025-11-16":"simon","a_2025-11-23_2025-11-23":"simon","a_2025-12-12_2025-12-12":"simon","a_2025-12-14_2025-12-14":"simon","a_2025-12-15_2025-12-15":"cln1","a_2025-12-19_2025-12-19":"cln2","a_2025-12-21_2025-12-21":"cln1","a_2025-12-22_2025-12-22":"cln1","a_2025-12-25_2025-12-25":"cln1","a_2025-12-27_2025-12-27":"simon","a_2025-12-28_2025-12-28":"simon","a_2025-12-30_2025-12-30":"simon","a_2025-12-31_2025-12-31":"cln1","a_2026-01-04_2026-01-04":"cln2","a_2026-01-06_2026-01-06":"cln1","a_2026-01-09_2026-01-09":"simon","a_2026-01-13_2026-01-13":"cln1","a_2026-01-18_2026-01-18":"simon","a_2026-01-22_2026-01-22":"simon","a_2026-01-24_2026-01-24":"simon","a_2026-01-25_2026-01-25":"simon","a_2026-01-28_2026-01-28":"cln1","a_2026-02-01_2026-02-01":"simon","a_2026-02-08_2026-02-08":"simon","a_2026-02-11_2026-02-11":"simon","a_2026-02-12_2026-02-12":"simon","a_2026-02-13_2026-02-13":"cln1","a_2026-02-14_2026-02-14":"cln1","a_2026-02-15_2026-02-15":"simon","a_2026-02-19_2026-02-19":"simon","a_2026-02-21_2026-02-21":"simon","a_2026-02-22_2026-02-22":"simon","a_2026-02-23_2026-02-23":"simon","a_2026-02-24_2026-02-24":"cln1","a_2026-02-26_2026-02-26":"cln1","a_2026-02-27_2026-02-27":"cln1","a_2026-03-01_2026-03-01":"cln1","a_2026-03-02_2026-03-02":"cln1","a_2026-03-03_2026-03-03":"cln1","a_2026-03-05_2026-03-05":"cln1","a_2026-03-08_2026-03-08":"cln1","a_2026-03-09_2026-03-09":"cln1","a_2026-03-10_2026-03-10":"cln1","a_2026-03-12_2026-03-12":"cln1","a_2026-03-15_2026-03-15":"simon","a_2026-03-16_2026-03-16":"simon","a_2026-03-20_2026-03-20":"simon","a_2026-03-22_2026-03-22":"cln1","a_2026-03-26_2026-03-26":"cln1","a_2026-03-29_2026-03-29":"cln1","a_2026-03-30_2026-03-30":"cln1","a_2026-03-31_2026-03-31":"cln1","a_2026-04-01_2026-04-01":"cln1","a_2026-04-03_2026-04-03":"cln1","a_2026-04-05_2026-04-05":"cln1","a_2026-04-06_2026-04-06":"cln1","a_2026-04-10_2026-04-10":"cln1","a_2026-04-11_2026-04-11":"cln1","a_2026-04-15_2026-04-15":"cln2","a_2026-04-16_2026-04-16":"cln1","a_2026-04-17_2026-04-17":"cln1","a_2026-04-19_2026-04-19":"cln1","a_2026-04-20_2026-04-20":"cln1","a_2026-04-21_2026-04-21":"cln1","a_2026-04-25_2026-04-25":"cln1","a_2026-04-26_2026-04-26":"cln1","a_2026-04-27_2026-04-27":"cln1","a_2026-04-28_2026-04-28":"cln1","a_2026-04-29_2026-04-29":"cln1","a_2026-04-30_2026-04-30":"cln1","a_2026-05-26_2026-05-26":"cln1"},
+  notes:{},
+  checklist:['Dolít tůje na terase při suchu','Vyměnit ložní prádlo','Připravit gauč dle počtu hostů','Ručníky – 1 velký + 1 malý','Zkontrolovat nádobí a umyvadla','Wifi v zásuvce, ovladač na stůl','Stáhnout topení na minimum','Klíč do keylocku (kód: 8744)'],
+  calMonth:null,feeMonth:'2025-06',apiKey:'',lastSync:null,rate:50,receipts:[],
+};
+
+let currentUser=null;
+
+// HEAD ADMIN pin can be changed and saved separately
+let haPin=HEAD_ADMIN.pin;
+
+function allUsers(){
+  // Head admin always first
+  const ha={...HEAD_ADMIN,pin:haPin};
+  return[ha,...S.users];
+}
+
+function save(){
+  try{
+    const d={...S,calMonth:S.calMonth?S.calMonth.toISOString():null,bookings:S.bookings===BK?'D':S.bookings,haPin};
+    localStorage.setItem('mozE',JSON.stringify(d));
+  }catch(e){}
+}
+function load(){
+  try{
+    const d=localStorage.getItem('mozE');
+    if(d){
+      const p=JSON.parse(d);
+      if(p.bookings==='D')p.bookings=BK;
+      if(p.haPin)haPin=p.haPin;
+      delete p.haPin;
+      // Merge saved assignments on top of defaults (don't wipe defaults)
+      const defaultAssignments=S.assignments||{};
+      S={...S,...p};
+      S.assignments={...defaultAssignments,...(p.assignments||{})};
+      S.calMonth=p.calMonth?new Date(p.calMonth):null;
+    }
+  }catch(e){}
+  if(!S.users||!S.users.length)S.users=JSON.parse(JSON.stringify(DEFAULT_USERS));
+  // Remove any headAdmin from S.users
+  S.users=S.users.filter(u=>u.role!=='headAdmin');
+  // Ensure Šimon exists in users
+  if(!S.users.find(u=>u.id==='simon')){
+    S.users.push({id:'simon',name:'Šimon',role:'cleaner',pin:'0000',color:'#c9b800',phone:'',unavail:[]});
+  }
+}
+load();
+
+// LOGIN
+function buildLoginGrid(){
+  const grid=document.getElementById('userGrid');
+  const users=allUsers();
+  grid.innerHTML=users.map(u=>`
+    <button class="user-btn" data-uid="${u.id}">
+      <div class="user-avatar" style="background:${u.color}">${u.name[0]}</div>
+      <div class="user-name">${u.name}</div>
+    </button>`).join('');
+}
+
+let selectedUserId='',pinBuffer='';
+function selectUser(id){
+  selectedUserId=id;
+  document.querySelectorAll('.user-btn').forEach(b=>{
+    b.classList.toggle('sel', b.dataset.uid===id);
+  });
+  const sec=document.getElementById('pinSection');
+  sec.style.display='block';
+  document.getElementById('loginErr').textContent='';
+  const inp=document.getElementById('pinInput');
+  inp.value='';
+  setTimeout(()=>inp.focus(),80);
+}
+function updatePinDots(){} // prázdná — zachováno pro kompatibilitu
+function pinKey(k){} // prázdná
+function pinBack(){}
+function pinClear(){}
+function checkPin(){
+  const pin=document.getElementById('pinInput').value.trim();
+  const u=allUsers().find(x=>x.id===selectedUserId);
+  if(u&&pin===u.pin){
+    currentUser={...u};
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('appWrap').classList.add('visible');
+    buildApp();
+  } else {
+    document.getElementById('loginErr').textContent='Nesprávný PIN.';
+    document.getElementById('pinInput').value='';
+    document.getElementById('pinInput').focus();
+  }
+}
+function logout(){
+  currentUser=null;selectedUserId='';
+  document.getElementById('appWrap').classList.remove('visible');
+  document.getElementById('loginWrap').style.display='flex';
+  document.querySelectorAll('.user-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('pinSection').style.display='none';
+  buildLoginGrid();
+}
+
+// APP
+function isAdmin(){return currentUser&&(currentUser.role==='admin'||currentUser.role==='headAdmin');}
+function isHeadAdmin(){return currentUser&&currentUser.role==='headAdmin';}
+
+function buildApp(){
+  document.getElementById('sidebarUser').textContent=currentUser.name;
+  document.getElementById('syncBtn').style.display=isAdmin()?'block':'none';
+
+  let navHtml='';
+  if(isAdmin()){
+    navHtml+=`<div class="sidebar-section">Hlavní</div>
+    <button class="nav-item on" data-action="navTo" data-page="dash"><span class="nav-icon">📊</span>Přehled</button>
+    <button class="nav-item" data-action="navTo" data-page="cal"><span class="nav-icon">📅</span>Kalendář</button>
+    <button class="nav-item" data-action="navTo" data-page="fee"><span class="nav-icon">🏙️</span>Poplatky</button>
+    <button class="nav-item" data-action="navTo" data-page="uctk"><span class="nav-icon">🧾</span>Účtenky</button>
+    <div class="sidebar-section">Tým</div>
+    <button class="nav-item" data-action="navTo" data-page="staff"><span class="nav-icon">👥</span>Tým</button>
+    <div class="sidebar-section">Systém</div>
+    <button class="nav-item" data-action="navTo" data-page="set"><span class="nav-icon">⚙️</span>Nastavení</button>`;
+  } else {
+    navHtml+=`<div class="sidebar-section">Moje úkoly</div>
+    <button class="nav-item on" data-action="navTo" data-page="cal"><span class="nav-icon">📅</span>Kalendář</button>
+    <button class="nav-item" data-action="navTo" data-page="uctk"><span class="nav-icon">🧾</span>Účtenky</button>`;
+  }
+  document.getElementById('sidebarNav').innerHTML=navHtml;
+
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  if(isAdmin()){
+    document.getElementById('pg-dash').classList.add('on');
+    rDash();
+  } else {
+    document.getElementById('pg-cal').classList.add('on');
+    rCal();
+  }
+  uSUI();
+}
+
+function nav(id,btn){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  btn.classList.add('on');
+  ({dash:rDash,cal:rCal,exp:rExp,fee:rFee,staff:rStaff,set:rSet,users:rUsers,uctk:rUctk})[id]?.();
+}
+
+const ini=n=>n.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+const nts=(a,b)=>Math.max(1,Math.round((new Date(b)-new Date(a))/864e5));
+const fd=s=>{const d=new Date(s);return d.getDate()+'.'+(d.getMonth()+1)+'.'};
+const pad=n=>String(n).padStart(2,'0');
+const mkds=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
+const today=()=>{const n=new Date();return mkds(n.getFullYear(),n.getMonth(),n.getDate())};
+const gFmt=g=>g===1?'1 host':g<=4?`${g} hosté`:`${g} hostů`;
+const bkFor=d=>S.bookings.find(b=>d>=b.ci&&d<=b.co)||null;
+const clFor=d=>S.bookings.find(b=>b.cl&&b.cl.includes(d))||null;
+const getCalMonth=()=>S.calMonth||(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),1)})();
+
+// DASHBOARD
+let CI=null;
+function rDash(){
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+  const dim=new Date(y,m+1,0).getDate();
+  let occ=0;for(let d=1;d<=dim;d++)if(bkFor(mkds(y,m,d)))occ++;
+  const rate=Math.round(occ/dim*100);
+  const tFee=S.bookings.reduce((s,b)=>s+(b.g-b.c)*nts(b.ci,b.co)*S.rate,0);
+  const tExp=S.expenses.reduce((s,e)=>s+e.amount,0);
+  document.getElementById('mm').innerHTML=`
+    <div class="met hi"><div class="lb">Obsazenost</div><div class="vl">${rate}%</div><div class="sb">${MCZ[m].toLowerCase()}</div></div>
+    <div class="met"><div class="lb">Rezervace</div><div class="vl">${S.bookings.length}</div><div class="sb">celkem</div></div>
+    <div class="met"><div class="lb">Turistické poplatky</div><div class="vl">${tFee.toLocaleString('cs')} Kč</div><div class="sb">celkem</div></div>
+    <div class="met"><div class="lb">Náklady</div><div class="vl">${tExp.toLocaleString('cs')} Kč</div><div class="sb">zapsáno</div></div>`;
+  const od=Array(12).fill(0);
+  for(let mi=0;mi<12;mi++){const dm=new Date(2025,mi+1,0).getDate();let c=0;for(let d=1;d<=dm;d++)if(bkFor(mkds(2025,mi,d)))c++;od[mi]=Math.round(c/dm*100);}
+  if(CI)CI.destroy();
+  CI=new Chart(document.getElementById('occ'),{type:'bar',
+    data:{labels:MCZ.map(m=>m.slice(0,3)),datasets:[{data:od,backgroundColor:od.map(v=>v>0?'#3b5bdb':'#dde9ff'),borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:11}},grid:{color:'rgba(128,128,128,0.08)'}},
+              x:{ticks:{font:{size:11},autoSkip:false,maxRotation:0},grid:{display:false}}}}});
+  const up=S.bookings.filter(b=>new Date(b.ci)>=now).slice(0,6);
+  document.getElementById('mup').innerHTML=up.length
+    ?up.map(b=>`<div class="card"><div class="brow"><div class="ava ${b.s==='airbnb'?'ab':'bk'}">${ini(b.n)}</div><div class="bi"><div class="bn">${b.n}</div><div class="bd">${fd(b.ci)} → ${fd(b.co)} · ${nts(b.ci,b.co)} nocí</div></div><div class="bm"><span class="bdg ${b.s==='airbnb'?'ab':'bk'}">${b.s}</span><span class="bdg g">${b.g} os.</span></div></div></div>`).join('')
+    :'<div class="empty">Žádné nadcházející rezervace</div>';
+}
+
+// CALENDAR
+function rCal(){
+  const cal=getCalMonth(),y=cal.getFullYear(),m=cal.getMonth();
+  document.getElementById('clbl').textContent=`${MCZ[m]} ${y}`;
+  const firstDay=new Date(y,m,1).getDay();
+  const offset=firstDay===0?6:firstDay-1;
+  const dim=new Date(y,m+1,0).getDate();
+  const td=today();
+
+  // Build legend: Booking + Airbnb + cleaners text only
+  const cleaners=S.users.filter(u=>u.role==='cleaner');
+  const legHtml=`<div class="cli"><div class="clpill" style="background:#3b5bdb"></div>Booking.com</div>
+    <div class="cli"><div class="clpill" style="background:#f87171"></div>Airbnb</div>
+    <div style="width:1px;background:var(--br);margin:0 4px"></div>`+
+    cleaners.map(u=>`<div class="cli" style="font-size:11px;color:var(--tx2)">${u.name}</div>`).join('<div style="color:var(--tx3);font-size:11px">·</div>');
+  document.getElementById('calLegend').innerHTML=legHtml;
+
+  const cells=[];
+  for(let i=0;i<offset;i++)cells.push(null);
+  for(let d=1;d<=dim;d++)cells.push(mkds(y,m,d));
+  while(cells.length%7)cells.push(null);
+  const weeks=[];
+  for(let i=0;i<cells.length;i+=7)weeks.push(cells.slice(i,i+7));
+
+  const monthClnDates=[];
+  S.bookings.forEach(b=>{(b.cl||[]).forEach(cd=>{if(cd.slice(0,7)===`${y}-${pad(m+1)}`)monthClnDates.push(cd);});});
+  monthClnDates.sort();
+
+  const WE=[5,6];
+  const NUM_H=26,PH=20,PT=28,SUB_H=14;
+  const ROW_H=NUM_H+2+PH+2+SUB_H+4;
+
+  let html='';
+  weeks.forEach(wk=>{
+    const nums=wk.map((d,col)=>{
+      const we=WE.includes(col)?'we':'';
+      if(!d)return`<div class="wk-num ${we}"></div>`;
+      const n=+d.slice(8);
+      return`<div class="wk-num ${we}">${d===td?`<div class="td-circle">${n}</div>`:n}</div>`;
+    }).join('');
+
+    const segs=[];const seen=new Set();
+    wk.forEach((d,col)=>{
+      if(!d)return;const b=bkFor(d);if(!b)return;
+      const key=b.ci+b.n;if(seen.has(key))return;seen.add(key);
+      let ec=col;
+      for(let c=col+1;c<7;c++){if(wk[c]&&bkFor(wk[c])===b)ec=c;else break;}
+      const wF=wk.find(x=>x),wL=[...wk].reverse().find(x=>x);
+      let cleanupDate=null;
+      for(let c=col;c<=ec;c++){if(wk[c]&&clFor(wk[c])===b){cleanupDate=wk[c];break;}}
+      segs.push({b,sc:col,ec,rL:b.ci>=wF&&b.ci<=wL,rR:b.co>=wF&&b.co<=wL,cleanupDate});
+    });
+
+    const pct=v=>`${(v/7*100).toFixed(3)}%`;
+    let pills='';
+    segs.forEach(({b,sc,ec,rL,rR,cleanupDate})=>{
+      const L=pct(sc),W=pct(ec-sc+1);
+      const cls=b.s==='airbnb'?'ab':'bk';
+      const rl=rL?10:0,rr=rR?10:0;
+      const name=(ec>sc||rL)?`<span class="pl-name">${b.n.split(' ')[0]}</span>`:'';
+      pills+=`<div class="pl ${cls}" title="${b.n} · ${fd(b.ci)}–${fd(b.co)}" style="left:${L};width:${W};top:${PT}px;border-radius:${rl}px ${rr}px ${rr}px ${rl}px">${name}</div>`;
+
+      if(cleanupDate){
+        const aKey=`a_${cleanupDate}_${b.ci}`;
+        const assignedId=S.assignments?.[aKey];
+        const assignedUser=assignedId?allUsers().find(u=>u.id===assignedId):null;
+        const g=b.g||0;
+        const subTop=PT+PH+2;
+        const gEsc=b.n.replace(/'/g,"\'").replace(/"/g,'&quot;');
+        const nKey=`n_${cleanupDate}_${b.ci}`;
+        const hasNote=!!(S.notes?.[nKey]);
+
+        let subContent='';
+        if(assignedUser){
+          const noteTxt=hasNote?(S.notes[nKey]||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/\n/g,'&#10;'):'';
+          const noteBtn=hasNote
+            ?`<span class="nt" style="flex-shrink:0"><button class="nb h" data-action="noteOpen" data-key="${nKey}" data-guest="${gEsc}" data-date="${cleanupDate}">!</button><span class="nt-tip">${noteTxt}</span></span>`
+            :`<button class="nb e" style="flex-shrink:0" data-action="noteOpen" data-key="${nKey}" data-guest="${gEsc}" data-date="${cleanupDate}">✎</button>`;
+          subContent=`<span class="pl-sub-txt">${assignedUser.name} · ${gFmt(g)}</span>${noteBtn}`;
+        } else {
+          subContent=`<button class="assign-btn" data-action="assignOpen" data-key="${aKey}" data-guest="${gEsc}" data-date="${cleanupDate}">Přihlásit</button>`;
+        }
+        pills+=`<div class="pl-sub" style="left:${L};width:${W};top:${subTop}px">${subContent}</div>`;
+      }
+    });
+
+    html+=`<div class="wk" style="height:${ROW_H}px"><div class="wk-nums">${nums}</div><div class="wk-pills" style="overflow:visible">${pills}</div></div>`;
+  });
+
+  document.getElementById('cbody').innerHTML=html;
+}
+function cPrev(){S.calMonth=new Date(getCalMonth().getFullYear(),getCalMonth().getMonth()-1,1);save();rCal();}
+function cNext(){S.calMonth=new Date(getCalMonth().getFullYear(),getCalMonth().getMonth()+1,1);save();rCal();}
+
+// ASSIGN MODAL
+let _aKey='';
+function openAssign(key,guest,date){
+  _aKey=key;
+  document.getElementById('assignSub').textContent=`${guest.replace(/&quot;/g,'"')} · ${date}`;
+  const uki=S.users.filter(u=>u.role==='cleaner');
+  const currentId=S.assignments?.[key];
+  document.getElementById('assignGrid').innerHTML=uki.map(u=>`
+    <div class="assign-opt${currentId===u.id?' sel':''}" data-action="doAssign" data-uid="${u.id}">
+      <div class="ao-av" style="background:${u.color}">${u.name[0]}</div>
+      <div><div class="ao-name">${u.name}${currentId===u.id?' ✓':''}</div><div class="ao-role">Uklízečka</div></div>
+    </div>`).join('')+
+    (currentId?`<button class="btn danger" style="width:100%;margin-top:4px" data-action="doAssign" data-uid="">Odebrat přihlášení</button>`:'');
+  document.getElementById('assignOverlay').classList.add('open');
+}
+function doAssign(uid){
+  if(!S.assignments)S.assignments={};
+  if(uid)S.assignments[_aKey]=uid;
+  else delete S.assignments[_aKey];
+  save();closeModal('assignOverlay');rCal();
+}
+
+// NOTE MODAL
+let _nKey='';
+function openNote(key,guest,date){
+  _nKey=key;
+  document.getElementById('noteSub').textContent=`${guest.replace(/&quot;/g,'"')} · ${date}`;
+  document.getElementById('noteText').value=S.notes?.[key]||'';
+  document.getElementById('noteOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('noteText').focus(),60);
+}
+function saveNote(){
+  if(!_nKey)return;
+  if(!S.notes)S.notes={};
+  S.notes[_nKey]=document.getElementById('noteText').value.trim();
+  save();closeModal('noteOverlay');rCal();
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// EXPENSES
+function rExp(){
+  const tot=S.expenses.reduce((s,e)=>s+e.amount,0);
+  const cats={};S.expenses.forEach(e=>cats[e.cat]=(cats[e.cat]||0)+e.amount);
+  const top=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('exm').innerHTML=`<div class="met"><div class="lb">Celkem</div><div class="vl">${tot.toLocaleString('cs')} Kč</div><div class="sb">výdaje</div></div><div class="met"><div class="lb">Záznamy</div><div class="vl">${S.expenses.length}</div><div class="sb">položek</div></div><div class="met"><div class="lb">Hlavní kat.</div><div class="vl" style="font-size:14px">${top?top[0]:'—'}</div><div class="sb">${top?top[1].toLocaleString('cs')+' Kč':''}</div></div>`;
+  document.getElementById('exl').innerHTML=[...S.expenses].reverse().map(e=>`<div class="ei"><div class="eil"><div class="ed">${e.desc}</div><div class="em">${e.cat}${e.who?' · '+e.who:''} · ${e.date}${e.note?' · '+e.note:''}</div></div><div style="display:flex;align-items:center;gap:8px"><div class="ea">${e.amount.toLocaleString('cs')} Kč</div><button class="btn danger" style="padding:4px 9px;font-size:12px" data-action="dExp" data-id="${e.id}">×</button></div></div>`).join('')||'<div class="empty">Zatím žádné výdaje</div>';
+}
+function addExp(){const d=document.getElementById('ed').value.trim(),a=parseInt(document.getElementById('ea').value);if(!d||!a)return;S.expenses.push({id:Date.now(),desc:d,amount:a,cat:document.getElementById('ec').value,who:document.getElementById('ew').value.trim(),date:new Date().toISOString().slice(0,10),note:document.getElementById('en').value.trim()});['ed','ea','ew','en'].forEach(i=>document.getElementById(i).value='');save();rExp();}
+function dExp(id){S.expenses=S.expenses.filter(e=>e.id!==id);save();rExp();}
+
+// FEES
+function rFee(){
+  const ms=[...new Set(S.bookings.map(b=>b.ci.slice(0,7)))].sort();
+  if(!ms.includes(S.feeMonth))S.feeMonth=ms[0]||'2025-06';
+  document.getElementById('fmonths').innerHTML=ms.map(mo=>`<button class="mb ${mo===S.feeMonth?'on':''}" data-action="setFM" data-month="${mo}">${MCZ[+mo.slice(5,7)-1].slice(0,3)} ${mo.slice(2,4)}</button>`).join('');
+  document.getElementById('flbl').textContent=`${MCZ[+S.feeMonth.slice(5,7)-1]} ${S.feeMonth.slice(0,4)}`;
+  const bks=S.bookings.filter(b=>b.ci.startsWith(S.feeMonth));let tot=0;
+  document.getElementById('ftb').innerHTML=bks.map(b=>{const n=nts(b.ci,b.co),a=b.g-b.c,f=a*n*S.rate;tot+=f;return`<tr><td style="font-size:12px">${b.n}</td><td>${n}</td><td>${a}</td><td><strong>${f.toLocaleString('cs')} Kč</strong></td></tr>`}).join('')||`<tr><td colspan="4" style="text-align:center;color:var(--tx3);padding:20px">Žádné rezervace</td></tr>`;
+  document.getElementById('ftot').innerHTML=`<span>Celkem k odvodu</span><span>${tot.toLocaleString('cs')} Kč</span>`;
+}
+function setFM(m){S.feeMonth=m;rFee();}
+
+// STAFF
+function rStaff(){
+  const adminSec=document.getElementById('staff-admin-section');
+  if(isAdmin()){
+    adminSec.style.display='block';
+    const users=allUsers();
+    document.getElementById('slist').innerHTML=users.map(u=>{
+      const roleLabel=u.role==='headAdmin'?'Head Admin':u.role==='admin'?'Admin':'Uklízečka';
+      const isMe=u.id===currentUser.id;
+      return`<div class="sc">
+        <div class="sa" style="background:${u.color};color:#fff">${u.name[0]}</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:500">${u.name}</div>
+          <div style="font-size:12px;color:var(--tx2);margin-top:2px">${roleLabel}${u.phone?' · '+u.phone:''}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn sec" style="padding:5px 10px;font-size:12px" data-action="editUser" data-uid="${u.id}">Upravit</button>
+          ${!isMe&&u.id!==HEAD_ADMIN.id?`<button class="btn danger" style="padding:5px 10px;font-size:12px" data-action="delUser" data-uid="${u.id}">Smazat</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    adminSec.style.display='none';
+  }
+  document.getElementById('chk').innerHTML=S.checklist.map((c,i)=>`<div class="cli2"><input type="checkbox" data-action="chkItem" data-idx="${i}"/><span>${c}</span></div>`).join('');
+}
+function chkI(i,el){if(el.checked){S.checklist.splice(i,1);save();rStaff();}}
+function addCheck(){const t=prompt('Nový bod:');if(!t)return;S.checklist.push(t.trim());save();rStaff();}
+
+// USER MANAGEMENT
+function rUsers(){rStaff();} // alias kept for safety
+
+function delUser(id){
+  if(id===HEAD_ADMIN.id){alert('Head admin nelze smazat.');return;}
+  const u=S.users.find(x=>x.id===id);
+  if(!u)return;
+  if(!confirm(`Opravdu smazat ${u.name}?`))return;
+  S.users=S.users.filter(x=>x.id!==id);
+  save();rStaff();
+}
+
+let _editUserId=null;
+function openNewUser(){
+  _editUserId=null;
+  document.getElementById('userModalTitle').textContent='Nový uživatel';
+  document.getElementById('nu-name').value='';
+  document.getElementById('nu-email').value='';
+  document.getElementById('nu-role').value='cleaner';
+  document.getElementById('nu-pin').value='';
+  document.getElementById('nu-color').value='#16a34a';
+  document.getElementById('nu-err').textContent='';
+  document.getElementById('userOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('nu-name').focus(),60);
+}
+function openEditUser(id){
+  const u=allUsers().find(x=>x.id===id);
+  if(!u)return;
+  _editUserId=id;
+  document.getElementById('userModalTitle').textContent='Upravit uživatele';
+  document.getElementById('nu-name').value=u.name;
+  document.getElementById('nu-email').value=u.email||'';
+  document.getElementById('nu-role').value=u.role==='headAdmin'?'admin':u.role;
+  document.getElementById('nu-pin').value='';
+  document.getElementById('nu-color').value=u.color||'#16a34a';
+  document.getElementById('nu-err').textContent='';
+  document.getElementById('userOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('nu-name').focus(),60);
+}
+function saveNewUser(){
+  const name=document.getElementById('nu-name').value.trim();
+  const email=document.getElementById('nu-email').value.trim();
+  const role=document.getElementById('nu-role').value;
+  const pin=document.getElementById('nu-pin').value.trim();
+  const color=document.getElementById('nu-color').value;
+  const err=document.getElementById('nu-err');
+  if(!name){err.textContent='Zadejte jméno.';return;}
+  if(_editUserId){
+    // Edit existing
+    const isHA=_editUserId===HEAD_ADMIN.id;
+    if(isHA){
+      // can only change pin for head admin
+      if(pin&&!/^\d{4}$/.test(pin)){err.textContent='PIN musí být 4 číslice.';return;}
+      if(pin)haPin=pin;
+    } else {
+      const u=S.users.find(x=>x.id===_editUserId);
+      if(u){
+        u.name=name;u.email=email;u.color=color;
+        if(role!=='headAdmin')u.role=role;
+        if(pin){if(!/^\d{4}$/.test(pin)){err.textContent='PIN musí být 4 číslice.';return;}u.pin=pin;}
+      }
+    }
+  } else {
+    // New user
+    if(!/^\d{4}$/.test(pin)){err.textContent='PIN musí být 4 číslice.';return;}
+    S.users.push({id:'u_'+Date.now(),name,email,role,pin,color,phone:'',unavail:[]});
+  }
+  save();closeModal('userOverlay');rStaff();
+}
+
+// SETTINGS
+function rSet(){
+  document.getElementById('akey').value=S.apiKey?'••••••••'+S.apiKey.slice(-4):'';
+  document.getElementById('srate').value=S.rate;
+  document.getElementById('colset').innerHTML=allUsers().filter(u=>u.role==='cleaner').map(u=>`
+    <div class="sr"><div style="display:flex;align-items:center;gap:10px"><div style="width:14px;height:14px;border-radius:50%;background:${u.color}"></div><div class="srl">${u.name}</div></div>
+    <input type="color" value="${u.color}" onchange="setUC('${u.id}',this.value)" style="width:36px;height:28px;border:none;padding:0;background:none;cursor:pointer"/></div>`).join('');
+  uSUI();
+}
+function changeMyPin(){
+  const p1=document.getElementById('newpin1').value.trim();
+  const p2=document.getElementById('newpin2').value.trim();
+  if(!/^\d{4}$/.test(p1)){alert('PIN musí být 4 číslice.');return;}
+  if(p1!==p2){alert('PINy se neshodují.');return;}
+  if(currentUser.id===HEAD_ADMIN.id){haPin=p1;}
+  else{const u=S.users.find(x=>x.id===currentUser.id);if(u)u.pin=p1;}
+  save();
+  document.getElementById('newpin1').value='';
+  document.getElementById('newpin2').value='';
+  alert('PIN byl změněn.');
+}
+function setUC(id,c){
+  if(id===HEAD_ADMIN.id)return;
+  const u=S.users.find(x=>x.id===id);if(u){u.color=c;save();rSet();}
+}
+function saveKey(){const v=document.getElementById('akey').value.trim();if(!v||v.startsWith('•'))return;S.apiKey=v;save();alert('API klíč uložen.');uSUI();}
+function clearData(){if(confirm('Opravdu smazat vše?')){localStorage.removeItem('mozE');location.reload();}}
+function uSUI(){
+  const dot=document.getElementById('sdot'),lbl=document.getElementById('slbl'),sub=document.getElementById('lsync');
+  if(!dot)return;
+  if(!S.apiKey){dot.className='sdot';lbl.textContent='Synchronizovat';sub.textContent='Smoobu: nepřipojeno';return;}
+  dot.className=S.lastSync?'sdot ok':'sdot';
+  sub.textContent=S.lastSync?'Smoobu: '+new Date(S.lastSync).toLocaleTimeString('cs'):'Smoobu: připraven';
+}
+async function doSync(){
+  if(!S.apiKey){alert('Nejprve uložte API klíč v Nastavení.');return;}
+  const dot=document.getElementById('sdot'),lbl=document.getElementById('slbl');
+  dot.className='sdot spin';lbl.textContent='Načítám...';
+  try{
+    const res=await fetch('https://login.smoobu.com/api/reservations?size=200',{headers:{'Api-Key':S.apiKey,'Cache-Control':'no-cache'}});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const bks=(data.bookings||[]).map(b=>({id:b.id,n:(b.guestName||((b.firstname||'')+' '+(b.lastname||''))).trim(),ci:b.arrival,co:b.departure,g:(b.adults||1)+(b.children||0),c:b.children||0,s:(b.channel?.name||'').toLowerCase().includes('airbnb')?'airbnb':'booking',cl:[]})).filter(b=>b.ci&&b.co);
+    if(bks.length){S.bookings=bks;S.lastSync=Date.now();save();dot.className='sdot ok';lbl.textContent='Synchronizovat';document.getElementById('lsync').textContent='Smoobu: '+new Date().toLocaleTimeString('cs');rDash();alert(`Hotovo: ${bks.length} rezervací.`);}
+  }catch(e){dot.className='sdot err';lbl.textContent='Chyba';document.getElementById('lsync').textContent='Chyba: '+e.message;}
+}
+
+// ── ÚČTENKY ──
+let _receiptImgData=null;
+
+function rUctk(){
+  document.getElementById('receiptForm').style.display='none';
+  document.getElementById('receiptInput').value='';
+  _receiptImgData=null;
+  rReceiptList();
+}
+
+function handleReceipt(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    _receiptImgData=ev.target.result;
+    document.getElementById('receiptPreview').src=_receiptImgData;
+    document.getElementById('rtAmt').value='';
+    document.getElementById('receiptForm').style.display='block';
+    setTimeout(()=>{
+      document.getElementById('rtAmt').focus();
+      document.getElementById('receiptForm').scrollIntoView({behavior:'smooth',block:'start'});
+    },100);
+  };
+  reader.readAsDataURL(file);
+}
+
+function cancelReceipt(){
+  document.getElementById('receiptForm').style.display='none';
+  document.getElementById('receiptInput').value='';
+  _receiptImgData=null;
+}
+
+function saveReceipt(){
+  if(!_receiptImgData)return;
+  const amt=parseInt(document.getElementById('rtAmt').value)||0;
+  const amtEl=document.getElementById('rtAmt');
+  amtEl.style.borderColor='';
+  if(!amt){amtEl.style.borderColor='var(--rd)';amtEl.focus();return;}
+  if(!S.receipts)S.receipts=[];
+  const id=Date.now();
+  S.receipts.unshift({id,img:_receiptImgData,amt,who:currentUser.name,date:new Date().toISOString().slice(0,10)});
+  save();
+  cancelReceipt();
+  rReceiptList();
+  const lbl=document.getElementById('receiptLabel');
+  const orig=lbl.innerHTML;
+  lbl.innerHTML='<span style="font-size:26px">✅</span> Uloženo!';
+  lbl.style.background='#059669';
+  setTimeout(()=>{lbl.innerHTML=orig;lbl.style.background='var(--g)';},2000);
+}
+
+function rReceiptList(){
+  const list=document.getElementById('receiptList');
+  const lbl=document.getElementById('receiptListLbl');
+  if(!list)return;
+  const receipts=S.receipts||[];
+  if(!receipts.length){
+    lbl.style.display='none';
+    list.innerHTML='<div style="padding:24px 0;color:var(--tx3);font-size:13px;text-align:center">Zatím žádné účtenky 👆</div>';
+    return;
+  }
+  lbl.style.display='block';
+  list.innerHTML=receipts.map(r=>`
+    <div class="rc">
+      <img class="rc-img" src="${r.img}" data-action="viewReceipt" data-id="${r.id}"/>
+      <div class="rc-body">
+        <div class="rc-top">
+          <div class="rc-meta">${r.who} · ${r.date}</div>
+          <div class="rc-amt">${r.amt?r.amt.toLocaleString('cs')+' Kč':'—'}</div>
+        </div>
+        <div class="rc-actions">
+          <a href="${r.img}" download="uctenka_${r.date}.jpg" class="btn sec" style="padding:6px 12px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px">⬇ Stáhnout</a>
+          ${isAdmin()?`<button class="btn danger" style="padding:6px 10px;font-size:12px" data-action="delReceipt" data-id="${r.id}">Smazat</button>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function viewReceipt(id){
+  const r=(S.receipts||[]).find(x=>x.id===id);
+  if(!r)return;
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out';
+  ov.onclick=()=>ov.remove();
+  ov.innerHTML=`<img src="${r.img}" style="max-width:100%;max-height:90vh;object-fit:contain;border-radius:8px">`;
+  document.body.appendChild(ov);
+}
+
+function delReceipt(id){
+  if(!confirm('Smazat tuto účtenku?'))return;
+  S.receipts=(S.receipts||[]).filter(x=>x.id!==id);
+  save();rReceiptList();
+}
+
+buildLoginGrid();
+
+document.addEventListener('DOMContentLoaded', init);
+if(document.readyState==='complete'||document.readyState==='interactive') setTimeout(init,0);
+
+function init(){
+  // Login
+  document.getElementById('userGrid').addEventListener('click',function(e){
+    const btn=e.target.closest('.user-btn');
+    if(btn) selectUser(btn.dataset.uid);
+  });
+  document.getElementById('pinSubmit').addEventListener('click', checkPin);
+  document.getElementById('pinInput').addEventListener('keydown',function(e){
+    if(e.key==='Enter') checkPin();
+  });
+
+  // Globální event delegation pro celou appku — zachytí všechny data-action
+  document.addEventListener('click',function(e){
+    const el=e.target.closest('[data-action]');
+    if(!el)return;
+    const a=el.dataset.action;
+    if(a==='navTo'){nav(el.dataset.page,el);return;}
+    if(a==='editUser'){openEditUser(el.dataset.uid);return;}
+    if(a==='delUser'){delUser(el.dataset.uid);return;}
+    if(a==='assignOpen'){openAssign(el.dataset.key,el.dataset.guest,el.dataset.date);return;}
+    if(a==='doAssign'){doAssign(el.dataset.uid||'');return;}
+    if(a==='noteOpen'){openNote(el.dataset.key,el.dataset.guest,el.dataset.date);return;}
+    if(a==='dExp'){dExp(Number(el.dataset.id));return;}
+    if(a==='viewReceipt'){viewReceipt(Number(el.dataset.id));return;}
+    if(a==='delReceipt'){delReceipt(Number(el.dataset.id));return;}
+    if(a==='setFM'){setFM(el.dataset.month);return;}
+    if(a==='chkItem'){const i=Number(el.dataset.idx);if(el.checked){S.checklist.splice(i,1);save();rStaff();}return;}
+    if(a==='addCheck'){addCheck();return;}
+    if(a==='logout'){logout();return;}
+    if(a==='doSync'){doSync();return;}
+    if(a==='closeModal'){closeModal(el.dataset.modal);return;}
+    if(a==='saveNote'){saveNote();return;}
+    if(a==='saveNewUser'){saveNewUser();return;}
+    if(a==='openNewUser'){openNewUser();return;}
+    if(a==='saveReceipt'){saveReceipt();return;}
+    if(a==='cancelReceipt'){cancelReceipt();return;}
+    if(a==='saveKey'){saveKey();return;}
+    if(a==='clearData'){clearData();return;}
+    if(a==='changeMyPin'){changeMyPin();return;}
+    if(a==='addExp'){addExp();return;}
+    if(a==='cPrev'){cPrev();return;}
+    if(a==='cNext'){cNext();return;}
+  });
+}
+</script>
+</body>
+</html>
