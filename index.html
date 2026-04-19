@@ -1182,7 +1182,7 @@ async function doSync(){
   const dot=document.getElementById('sdot'),lbl=document.getElementById('slbl');
   dot.className='sdot spin';lbl.textContent='Načítám...';
   try{
-    const res=await fetch('https://login.smoobu.com/api/reservations?size=200',{headers:{'Api-Key':S.apiKey,'Cache-Control':'no-cache'}});
+    const res=await fetch('https://moz-proxy.lnouzak.workers.dev/api/reservations?size=200',{headers:{'Api-Key':S.apiKey,'Cache-Control':'no-cache'}});
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
     const bks=(data.bookings||[]).map(b=>({id:b.id,n:(b.guestName||((b.firstname||'')+' '+(b.lastname||''))).trim(),ci:b.arrival,co:b.departure,g:(b.adults||1)+(b.children||0),c:b.children||0,s:(b.channel?.name||'').toLowerCase().includes('airbnb')?'airbnb':'booking',cl:[]})).filter(b=>b.ci&&b.co);
