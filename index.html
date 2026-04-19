@@ -1195,7 +1195,7 @@ async function doSync(){
       page++;
       lbl.textContent=`Načítám... ${all.length}/${total}`;
     }
-    const bks=all.map(b=>({
+    const newBks=all.map(b=>({
       id:b.id,
       n:(b.guestName||((b.firstname||'')+' '+(b.lastname||''))).trim(),
       ci:b.arrival,co:b.departure,
@@ -1204,18 +1204,22 @@ async function doSync(){
       s:(b.channel?.name||'').toLowerCase().includes('airbnb')?'airbnb':'booking',
       cl:[]
     })).filter(b=>b.ci&&b.co);
-    if(bks.length){
-      // Zachovat existující assignments a notes
-      const oldBks=S.bookings;
-      bks.forEach(b=>{
-        const old=oldBks.find(o=>o.id===b.id||o.n===b.n&&o.ci===b.ci);
-        if(old)b.cl=old.cl||[];
+    if(newBks.length){
+      const existing=S.bookings;
+      // Zachovat cl z existujících dat
+      newBks.forEach(b=>{
+        const old=existing.find(o=>(o.id&&o.id===b.id)||(o.n===b.n&&o.ci===b.ci));
+        if(old&&old.cl&&old.cl.length)b.cl=old.cl;
       });
-      S.bookings=bks;S.lastSync=Date.now();save();
+      // Zachovat historická data z excelu která Smoobu nevrátí
+      const newKeys=new Set(newBks.map(b=>b.ci+'|'+b.n));
+      const historical=existing.filter(b=>!newKeys.has(b.ci+'|'+b.n));
+      S.bookings=[...historical,...newBks].sort((a,b)=>a.ci>b.ci?1:-1);
+      S.lastSync=Date.now();save();
       dot.className='sdot ok';lbl.textContent='Synchronizovat';
       sub.textContent='Smoobu: '+new Date().toLocaleTimeString('cs');
       rDash();
-      alert(`Hotovo: ${bks.length} rezervací.`);
+      alert(`Hotovo: ${newBks.length} ze Smoobu + ${historical.length} historických.`);
     }
   }catch(e){dot.className='sdot err';lbl.textContent='Chyba';sub.textContent='Chyba: '+e.message;}
 }
