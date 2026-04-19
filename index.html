@@ -51,50 +51,50 @@
 
 /* APP LAYOUT */
 .app{display:none}
-.app.visible{display:flex;min-height:100%;width:100%}
-.sidebar{width:200px;flex-shrink:0;background:var(--sidebar);display:flex;flex-direction:column;position:sticky;top:0;min-height:100%;overflow-y:auto}
-.sidebar-logo{padding:20px 16px 8px;font-size:15px;font-weight:600;color:#fff;letter-spacing:-.3px;line-height:1.2}
+.app.visible{display:flex;width:100%;min-height:100%}
+.sidebar{width:220px;flex-shrink:0;background:var(--sidebar);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:22px 18px 10px;font-size:15px;font-weight:700;color:#fff;letter-spacing:-.3px;line-height:1.2}
 
-/* MOBILE */
-@media(max-width:640px){
-  /* Login */
-  .login-box{width:100%;max-width:340px}
-  .user-grid{grid-template-columns:1fr 1fr}
+/* MOBILE — sidebar dole jako tab bar */
+@media(max-width:700px){
+  .login-wrap{padding:16px}
+  .login-box{width:100%}
+  .user-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .user-btn{padding:12px 8px}
+  .user-avatar{width:36px;height:36px;font-size:14px;margin-bottom:6px}
+  .user-name{font-size:12px}
 
-  /* App layout — sidebar nahoře jako spodní nav */
-  .app.visible{flex-direction:column}
-  .sidebar{width:100%;min-height:auto;position:sticky;top:0;z-index:100;flex-direction:column}
-  .sidebar-logo{padding:12px 16px 4px;font-size:14px}
-  .sidebar-logo span{display:none}
-  #sidebarNav{display:flex;flex-direction:row;overflow-x:auto;padding:4px 8px 8px;gap:2px}
+  .app.visible{flex-direction:column-reverse}
+  .sidebar{width:100%;height:auto;min-height:auto;position:sticky;bottom:0;top:auto;flex-direction:column;z-index:100;border-top:1px solid rgba(255,255,255,.1)}
+  .sidebar-logo{display:none}
+  .sidebar-bottom{display:none}
+  #sidebarNav{display:flex;flex-direction:row;overflow-x:auto;padding:6px 8px;gap:2px;-webkit-overflow-scrolling:touch}
   #sidebarNav .sidebar-section{display:none}
-  .nav-item{padding:7px 10px;margin:0;white-space:nowrap;width:auto;font-size:12px;border-radius:6px}
-  .nav-icon{font-size:13px}
-  .sidebar-bottom{flex-direction:row;align-items:center;padding:8px 12px;border-top:1px solid rgba(255,255,255,.08);flex-wrap:wrap;gap:8px}
-  .sidebar-user{padding:0}
-  .logout-btn{width:auto;padding:5px 10px;font-size:11px}
-  #syncBtn{margin-top:0}
-  .sync-row{padding:5px 8px;border-top:none;margin-top:0}
+  .nav-item{padding:8px 12px;margin:0;white-space:nowrap;width:auto;font-size:12px;border-radius:8px;flex-shrink:0}
 
-  /* Main content */
-  .main{flex:1;min-width:0;padding:28px 32px;width:100%}
+  .main{padding:14px 12px;max-width:100%;width:100%;min-height:0;overflow-y:auto}
+  .main-header{margin-bottom:14px}
   .main-header h1{font-size:18px}
-  .metrics{grid-template-columns:1fr 1fr;gap:8px}
+  .metrics{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+  .met{padding:11px 12px}
+  .met .vl{font-size:17px}
 
-  /* Calendar na mobilu */
+  /* Kalendář na mobilu — kompaktní */
+  .cal-nav{margin-bottom:10px}
+  .ctitle{font-size:15px}
+  .cal-arrows button{width:26px;height:26px;font-size:14px}
   .cal-dow span{font-size:9px;padding:2px 0}
-  .wk-num{font-size:10px;height:22px}
-  .pl{font-size:8px;height:16px;padding:0 3px}
-  .pl-sub{font-size:8px}
-  .td-circle{width:18px;height:18px;font-size:9px}
+  .wk-num{font-size:10px;height:20px}
+  .pl{font-size:8px;height:15px;padding:0 3px}
+  .pl-sub{font-size:7.5px}
+  .assign-btn{font-size:7.5px;padding:1px 4px}
+  .td-circle{width:17px;height:17px;font-size:9px}
 
-  /* Cards */
-  .brow{padding:9px 11px;gap:9px}
-  .form-row{flex-direction:column}
-  .form-row input,.form-row select,.form-row textarea{width:100%}
-
-  /* Modals */
-  .modal{width:94vw;padding:16px}
+  .form-row{flex-wrap:wrap;gap:6px}
+  .form-row input,.form-row select,.form-row textarea,.form-row button{width:100%}
+  .modal{width:96vw;padding:14px;margin:8px}
+  .sc{padding:10px 12px;gap:10px}
+  .brow{padding:9px 11px}
 }
 .sidebar-logo span{display:block;font-size:11px;font-weight:400;color:rgba(255,255,255,.4);margin-top:3px}
 .sidebar-section{padding:16px 10px 4px;font-size:10px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.8px}
@@ -118,7 +118,7 @@
 .sync-sub{font-size:10px;color:rgba(255,255,255,.3);margin-top:1px}
 
 /* MAIN */
-.main{flex:1;min-width:0;padding:28px 32px;width:100%}
+.main{flex:1;min-width:0;padding:28px 32px;width:100%;overflow-y:auto}
 .main-header{margin-bottom:22px}
 .main-header h1{font-size:22px;font-weight:600;letter-spacing:-.4px}
 .pg{display:none}.pg.on{display:block}
@@ -1179,16 +1179,49 @@ function uSUI(){
 }
 async function doSync(){
   if(!S.apiKey){alert('Nejprve uložte API klíč v Nastavení.');return;}
-  const dot=document.getElementById('sdot'),lbl=document.getElementById('slbl');
+  const dot=document.getElementById('sdot'),lbl=document.getElementById('slbl'),sub=document.getElementById('lsync');
   dot.className='sdot spin';lbl.textContent='Načítám...';
   try{
-    const res=await fetch('https://moz-proxy.lnouzak.workers.dev/api/reservations?size=200',{headers:{'Api-Key':S.apiKey,'Cache-Control':'no-cache'}});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    const bks=(data.bookings||[]).map(b=>({id:b.id,n:(b.guestName||((b.firstname||'')+' '+(b.lastname||''))).trim(),ci:b.arrival,co:b.departure,g:(b.adults||1)+(b.children||0),c:b.children||0,s:(b.channel?.name||'').toLowerCase().includes('airbnb')?'airbnb':'booking',cl:[]})).filter(b=>b.ci&&b.co);
-    if(bks.length){S.bookings=bks;S.lastSync=Date.now();save();dot.className='sdot ok';lbl.textContent='Synchronizovat';document.getElementById('lsync').textContent='Smoobu: '+new Date().toLocaleTimeString('cs');rDash();alert(`Hotovo: ${bks.length} rezervací.`);}
-  }catch(e){dot.className='sdot err';lbl.textContent='Chyba';document.getElementById('lsync').textContent='Chyba: '+e.message;}
+    let all=[],page=1,total=999;
+    while(all.length<total){
+      const res=await fetch(`https://moz-proxy.lnouzak.workers.dev/api/reservations?size=100&page=${page}`,{headers:{'Api-Key':S.apiKey,'Cache-Control':'no-cache'}});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      total=data.total_items||data.totalItems||data.total||999;
+      const bks=data.bookings||[];
+      if(!bks.length)break;
+      all=all.concat(bks);
+      if(all.length>=total)break;
+      page++;
+      lbl.textContent=`Načítám... ${all.length}/${total}`;
+    }
+    const bks=all.map(b=>({
+      id:b.id,
+      n:(b.guestName||((b.firstname||'')+' '+(b.lastname||''))).trim(),
+      ci:b.arrival,co:b.departure,
+      g:(b.adults||1)+(b.children||0),
+      c:b.children||0,
+      s:(b.channel?.name||'').toLowerCase().includes('airbnb')?'airbnb':'booking',
+      cl:[]
+    })).filter(b=>b.ci&&b.co);
+    if(bks.length){
+      // Zachovat existující assignments a notes
+      const oldBks=S.bookings;
+      bks.forEach(b=>{
+        const old=oldBks.find(o=>o.id===b.id||o.n===b.n&&o.ci===b.ci);
+        if(old)b.cl=old.cl||[];
+      });
+      S.bookings=bks;S.lastSync=Date.now();save();
+      dot.className='sdot ok';lbl.textContent='Synchronizovat';
+      sub.textContent='Smoobu: '+new Date().toLocaleTimeString('cs');
+      rDash();
+      alert(`Hotovo: ${bks.length} rezervací.`);
+    }
+  }catch(e){dot.className='sdot err';lbl.textContent='Chyba';sub.textContent='Chyba: '+e.message;}
 }
+
+// Auto-sync každých 30 minut
+setInterval(()=>{if(S.apiKey&&currentUser)doSync();},30*60*1000);
 
 // ── ÚČTENKY ──
 let _receiptImgData=null;
