@@ -293,9 +293,14 @@
     <div id="pg-dash" class="pg">
       <div class="main-header"><h1>Přehled</h1></div>
       <div class="metrics" id="mm"></div>
-      <div class="sg"><div class="slbl">Obsazenost · 2025–2026</div>
-      <div class="cwrap"><canvas id="occ" role="img" aria-label="Obsazenost">Graf.</canvas></div></div>
-      <div class="slbl">Nadcházející rezervace</div><div id="mup"></div>
+      <div class="sg">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="slbl" style="margin-bottom:0">Obsazenost po měsících</div>
+          <div style="display:flex;gap:5px" id="dashPeriodBtns"></div>
+        </div>
+        <div id="occTiles" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+      <div class="slbl" style="margin-top:22px">Nadcházející rezervace</div><div id="mup"></div>
     </div>
     <!-- Calendar -->
     <div id="pg-cal" class="pg">
@@ -863,25 +868,67 @@ const getCalMonth=()=>S.calMonth||(()=>{const n=new Date();return new Date(n.get
 // DASHBOARD
 let CI=null;
 function rDash(){
+  if(!S.dashPeriod)S.dashPeriod='6m';
   const now=new Date(),y=now.getFullYear(),m=now.getMonth();
-  const dim=new Date(y,m+1,0).getDate();
-  let occ=0;for(let d=1;d<=dim;d++)if(bkFor(mkds(y,m,d)))occ++;
-  const rate=Math.round(occ/dim*100);
-  const tFee=S.bookings.reduce((s,b)=>s+(b.g-b.c)*nts(b.ci,b.co)*S.rate,0);
-  const tExp=S.expenses.reduce((s,e)=>s+e.amount,0);
+
+  // Period buttons
+  const periods=[{k:'1m',l:'tento měsíc'},{k:'3m',l:'3 měs.'},{k:'6m',l:'6 měs.'},{k:'1r',l:'1 rok'},{k:'vse',l:'Vše'}];
+  document.getElementById('dashPeriodBtns').innerHTML=periods.map(p=>
+    `<button class="mb${S.dashPeriod===p.k?' on':''}" onclick="S.dashPeriod='${p.k}';save();rDash()">${p.l}</button>`
+  ).join('');
+
+  // Compute date range
+  const endDate=new Date(y,m+1,0);
+  let startDate;
+  if(S.dashPeriod==='1m') startDate=new Date(y,m,1);
+  else if(S.dashPeriod==='3m') startDate=new Date(y,m-2,1);
+  else if(S.dashPeriod==='6m') startDate=new Date(y,m-5,1);
+  else if(S.dashPeriod==='1r') startDate=new Date(y,m-11,1);
+  else{const first=S.bookings.map(b=>b.ci).sort()[0]||mkds(y,m,1);startDate=new Date(first.slice(0,7)+'-01');}
+
+  const startDs=mkds(startDate.getFullYear(),startDate.getMonth(),1);
+  const endDs=mkds(endDate.getFullYear(),endDate.getMonth(),endDate.getDate());
+  const periodLabel=S.dashPeriod==='1m'?'tento měsíc':S.dashPeriod==='3m'?'3 měsíce':S.dashPeriod==='6m'?'6 měsíců':S.dashPeriod==='1r'?'1 rok':'celkem';
+
+  // Build month list
+  const months=[];
+  let cur=new Date(startDate.getFullYear(),startDate.getMonth(),1);
+  while(cur<=endDate){months.push({y:cur.getFullYear(),m:cur.getMonth()});cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);}
+
+  // Avg occupancy over period
+  let totalDays=0,occupiedDays=0;
+  months.forEach(({y:my,m:mm})=>{
+    const dm=new Date(my,mm+1,0).getDate();
+    for(let d=1;d<=dm;d++){const ds=mkds(my,mm,d);if(ds>=startDs&&ds<=endDs){totalDays++;if(bkFor(ds))occupiedDays++;}}
+  });
+  const avgOcc=totalDays?Math.round(occupiedDays/totalDays*100):0;
+
+  // Filter bookings and expenses in period
+  const bksInPeriod=S.bookings.filter(b=>b.co>=startDs&&b.ci<=endDs);
+  const tFee=bksInPeriod.reduce((s,b)=>s+(b.g-b.c)*nts(b.ci,b.co)*S.rate,0);
+  const tExp=S.expenses.filter(e=>e.date>=startDs&&e.date<=endDs).reduce((s,e)=>s+e.amount,0);
+
   document.getElementById('mm').innerHTML=`
-    <div class="met hi"><div class="lb">Obsazenost</div><div class="vl">${rate}%</div><div class="sb">${MCZ[m].toLowerCase()}</div></div>
-    <div class="met"><div class="lb">Rezervace</div><div class="vl">${S.bookings.length}</div><div class="sb">celkem</div></div>
-    <div class="met"><div class="lb">Turistické poplatky</div><div class="vl">${tFee.toLocaleString('cs')} Kč</div><div class="sb">celkem</div></div>
-    <div class="met"><div class="lb">Náklady</div><div class="vl">${tExp.toLocaleString('cs')} Kč</div><div class="sb">zapsáno</div></div>`;
-  const od=Array(12).fill(0);
-  for(let mi=0;mi<12;mi++){const dm=new Date(2025,mi+1,0).getDate();let c=0;for(let d=1;d<=dm;d++)if(bkFor(mkds(2025,mi,d)))c++;od[mi]=Math.round(c/dm*100);}
-  if(CI)CI.destroy();
-  CI=new Chart(document.getElementById('occ'),{type:'bar',
-    data:{labels:MCZ.map(m=>m.slice(0,3)),datasets:[{data:od,backgroundColor:od.map(v=>v>0?'#3b5bdb':'#dde9ff'),borderRadius:5,borderSkipped:false}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:11}},grid:{color:'rgba(128,128,128,0.08)'}},
-              x:{ticks:{font:{size:11},autoSkip:false,maxRotation:0},grid:{display:false}}}}});
+    <div class="met hi"><div class="lb">Průměrná obsazenost</div><div class="vl">${avgOcc}%</div><div class="sb">${periodLabel}</div></div>
+    <div class="met"><div class="lb">Rezervace</div><div class="vl">${bksInPeriod.length}</div><div class="sb">${periodLabel}</div></div>
+    <div class="met"><div class="lb">Turistické poplatky</div><div class="vl">${tFee.toLocaleString('cs')} Kč</div><div class="sb">${periodLabel}</div></div>
+    <div class="met"><div class="lb">Náklady</div><div class="vl">${tExp.toLocaleString('cs')} Kč</div><div class="sb">${periodLabel}</div></div>`;
+
+  // Month tiles instead of chart
+  const tilesHtml=months.map(({y:my,m:mm})=>{
+    const dm=new Date(my,mm+1,0).getDate();
+    let c=0;for(let d=1;d<=dm;d++)if(bkFor(mkds(my,mm,d)))c++;
+    const pct=Math.round(c/dm*100);
+    const isNow=my===y&&mm===m;
+    const bg=pct===0?'var(--bg2)':pct<40?'#dde9ff':pct<70?'#93c5fd':'#3b5bdb';
+    const col=pct===0?'var(--tx3)':pct<40?'#2c4a9e':'#fff';
+    return `<div style="background:${bg};color:${col};border-radius:10px;padding:10px 8px;min-width:62px;text-align:center;flex:1;${isNow?'outline:2px solid var(--bk);outline-offset:2px':''}">
+      <div style="font-size:11px;font-weight:500;opacity:0.75;margin-bottom:4px">${MCZ[mm].slice(0,3)}${my!==y?` '${String(my).slice(2)}`:''}</div><div style="font-size:17px;font-weight:700">${pct}%</div>
+    </div>`;
+  }).join('');
+  document.getElementById('occTiles').innerHTML=tilesHtml;
+  if(CI){CI.destroy();CI=null;}
+
   const up=S.bookings.filter(b=>new Date(b.ci)>=now).slice(0,6);
   document.getElementById('mup').innerHTML=up.length
     ?up.map(b=>`<div class="card"><div class="brow"><div class="ava ${b.s==='airbnb'?'ab':'bk'}">${ini(b.n)}</div><div class="bi"><div class="bn">${b.n}</div><div class="bd">${fd(b.ci)} → ${fd(b.co)} · ${nts(b.ci,b.co)} nocí</div></div><div class="bm"><span class="bdg ${b.s==='airbnb'?'ab':'bk'}">${b.s}</span><span class="bdg g">${b.g} os.</span></div></div></div>`).join('')
@@ -929,25 +976,59 @@ function rCal(){
       return`<div class="wk-num ${we}">${d===td?`<div class="td-circle">${n}</div>`:n}</div>`;
     }).join('');
 
+    const nextDay=ds=>{const d=new Date(ds+'T12:00:00');d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);};
     const segs=[];const seen=new Set();
+    const wF=wk.find(x=>x),wL=[...wk].reverse().find(x=>x);
     wk.forEach((d,col)=>{
       if(!d)return;const b=bkFor(d);if(!b)return;
       const key=b.ci+b.n;if(seen.has(key))return;seen.add(key);
       let ec=col;
       for(let c=col+1;c<7;c++){if(wk[c]&&bkFor(wk[c])===b)ec=c;else break;}
-      const wF=wk.find(x=>x),wL=[...wk].reverse().find(x=>x);
       let cleanupDate=null;
       for(let c=col;c<=ec;c++){if(wk[c]&&clFor(wk[c])===b){cleanupDate=wk[c];break;}}
-      segs.push({b,sc:col,ec,rL:b.ci>=wF&&b.ci<=wL,rR:b.co>=wF&&b.co<=wL,cleanupDate});
+      const coNextD=nextDay(b.co);
+      const rL=b.ci>=wF&&b.ci<=wL;
+      const rR=coNextD>=wF&&coNextD<=wL;
+      segs.push({b,sc:col,ec,rL,rR,cleanupDate});
+    });
+    // Add tail segments: reservations that started before this week but co+1 is in this week
+    wk.forEach((d,col)=>{
+      if(!d)return;
+      const coNextD=nextDay(d);
+      // Find booking where this day is co+1 (i.e. checkout morning) and ci is before this week
+      const b=S.bookings.find(bk=>nextDay(bk.co)===d&&bk.ci<wF);
+      if(!b)return;
+      const key='tail_'+b.ci+b.n;if(seen.has(key))return;seen.add(key);
+      segs.push({b,sc:col,ec:col,rL:false,rR:true,cleanupDate:null,isTail:true});
     });
 
-    const pct=v=>`${(v/7*100).toFixed(3)}%`;
+    // 1 column = 1/7 of row width. HALF = 50% of one column.
+    const HALF=100/7/2;
+    const pct=v=>`${v.toFixed(3)}%`;
+
     let pills='';
-    segs.forEach(({b,sc,ec,rL,rR,cleanupDate})=>{
-      const L=pct(sc),W=pct(ec-sc+1);
+    segs.forEach(({b,sc,ec,rL,rR,cleanupDate,isTail})=>{
       const cls=b.s==='airbnb'?'ab':'bk';
       const rl=rL?10:0,rr=rR?10:0;
-      const name=(ec>sc||rL)?`<span class="pl-name">${b.n.split(' ')[0]}</span>`:'';
+
+      const coNext=nextDay(b.co);
+      const coNextCol=wk.indexOf(coNext);
+
+      let leftPct,rightPct;
+      if(isTail){
+        // Tail: from left edge of co+1 column to 50% of that column
+        leftPct=sc/7*100;
+        rightPct=sc/7*100+HALF;
+      } else {
+        leftPct  = rL ? (sc/7*100 + HALF) : 0;
+        const lastRealCol = 6 - [...wk].reverse().findIndex(d=>d!==null);
+        const maxRight = lastRealCol/7*100;
+        rightPct = (rR && coNextCol>=0) ? (coNextCol/7*100 + HALF) : Math.min(100, maxRight);
+      }
+      const L=pct(leftPct);
+      const W=pct(rightPct-leftPct);
+
+      const name=rL?`<span class="pl-name">${b.n.split(' ')[0]}</span>`:'';
       pills+=`<div class="pl ${cls}" title="${b.n} · ${fd(b.ci)}–${fd(b.co)}" style="left:${L};width:${W};top:${PT}px;border-radius:${rl}px ${rr}px ${rr}px ${rl}px">${name}</div>`;
 
       if(cleanupDate){
@@ -968,7 +1049,7 @@ function rCal(){
             :`<button class="nb e" style="flex-shrink:0" data-action="noteOpen" data-key="${nKey}" data-guest="${gEsc}" data-date="${cleanupDate}">✎</button>`;
           subContent=`<span class="pl-sub-txt">${assignedUser.name} · ${gFmt(g)}</span>${noteBtn}`;
         } else {
-          subContent=`<button class="assign-btn" data-action="assignOpen" data-key="${aKey}" data-guest="${gEsc}" data-date="${cleanupDate}">Přihlásit</button>`;
+          subContent=`<span class="warn-badge" data-action="assignOpen" data-key="${aKey}" data-guest="${gEsc}" data-date="${cleanupDate}">⚠ přihlásit</span>`;
         }
         pills+=`<div class="pl-sub" style="left:${L};width:${W};top:${subTop}px">${subContent}</div>`;
       }
@@ -1357,7 +1438,11 @@ function init(){
     if(a==='addCheck'){addCheck();return;}
     if(a==='logout'){logout();return;}
     if(a==='doSync'){doSync();return;}
-    if(a==='closeModal'){closeModal(el.dataset.modal);return;}
+    if(a==='closeModal'){
+      // Only close if clicking the overlay backdrop itself, not content inside
+      if(el.classList.contains('overlay') && e.target!==el) return;
+      closeModal(el.dataset.modal);return;
+    }
     if(a==='saveNote'){saveNote();return;}
     if(a==='saveNewUser'){saveNewUser();return;}
     if(a==='openNewUser'){openNewUser();return;}
