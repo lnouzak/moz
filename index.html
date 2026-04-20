@@ -999,7 +999,14 @@ function rCal(){
       const b=S.bookings.find(bk=>nextDay(bk.co)===d&&bk.ci<wF);
       if(!b)return;
       const key='tail_'+b.ci+b.n;if(seen.has(key))return;seen.add(key);
-      segs.push({b,sc:col,ec:col,rL:false,rR:true,cleanupDate:null,isTail:true});
+      // Find cleanup date for this booking in this week or previous
+      let tailCleanup=null;
+      const bCl=(b.cl||[]);
+      // Cleanup is on co day (checkout morning = co+1 which is d = this col)
+      // so cleanup date = b.co
+      if(bCl.includes(b.co)) tailCleanup=b.co;
+      else if(bCl.length) tailCleanup=bCl.find(cd=>wk.includes(cd))||null;
+      segs.push({b,sc:col,ec:col,rL:false,rR:true,cleanupDate:tailCleanup,isTail:true});
     });
 
     // 1 column = 1/7 of row width. HALF = 50% of one column.
@@ -1022,7 +1029,7 @@ function rCal(){
       } else {
         leftPct  = rL ? (sc/7*100 + HALF) : 0;
         const lastRealCol = 6 - [...wk].reverse().findIndex(d=>d!==null);
-        const maxRight = lastRealCol/7*100;
+        const maxRight = (lastRealCol+1)/7*100;
         rightPct = (rR && coNextCol>=0) ? (coNextCol/7*100 + HALF) : Math.min(100, maxRight);
       }
       const L=pct(leftPct);
@@ -1051,7 +1058,9 @@ function rCal(){
         } else {
           subContent=`<span class="warn-badge" data-action="assignOpen" data-key="${aKey}" data-guest="${gEsc}" data-date="${cleanupDate}">⚠ přihlásit</span>`;
         }
-        pills+=`<div class="pl-sub" style="left:${L};width:${W};top:${subTop}px">${subContent}</div>`;
+        const subLeftPct = isTail ? 0 : (rL ? sc/7*100+HALF : leftPct);
+        const subL=pct(subLeftPct);
+        pills+=`<div class="pl-sub" style="left:${subL};right:0;top:${subTop}px">${subContent}</div>`;
       }
     });
 
