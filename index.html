@@ -1307,7 +1307,7 @@ async function doSync(){
       dot.className='sdot ok';lbl.textContent='Synchronizovat';
       sub.textContent='Smoobu: '+new Date().toLocaleTimeString('cs');
       rDash();
-      alert(`Hotovo: ${newBks.length} ze Smoobu + ${historical.length} historických.`);
+      alert(`Hotovo: ${newBks.length} rezervací ze Smoobu.`);
     }
   }catch(e){dot.className='sdot err';lbl.textContent='Chyba';sub.textContent='Chyba: '+e.message;}
 }
