@@ -1291,6 +1291,9 @@ async function doSync(){
       s:(b.channel?.name||'').toLowerCase().includes('airbnb')?'airbnb':'booking',
       cl:[]
     })).filter(b=>b.ci&&b.co);
+    // Debug — ukáže první rezervaci ze Smoobu
+    console.log('Smoobu raw[0]:', JSON.stringify(all[0]));
+    console.log('Mapped[0]:', JSON.stringify(newBks[0]));
     if(newBks.length){
       const existing=S.bookings;
       // Zachovat cl (cleanup dates) z existujících dat
