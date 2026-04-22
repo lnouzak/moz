@@ -989,14 +989,11 @@ function rCal(){
       const coNextD=nextDay(b.co);
       const rL=b.ci>=wF&&b.ci<=wL; // checkin je v tomto týdnu
       const rR=coNextD>=wF&&coNextD<=wL; // co+1 je v tomto týdnu
-      // Cleanup datum — jen pro zobrazení subtitlu
-      // Pravidlo: subtitle se zobrazí POUZE pokud rL=true (checkin v tomto týdnu)
+      // Cleanup datum — zobrazí se na každém segmentu (i tail) kde je začátek viditelný
       let cleanupDate=null;
-      if(rL){
-        // Najdi cleanup v cl[], jinak použij co+1 jako default
-        for(let c=col;c<=ec;c++){if(wk[c]&&clFor(wk[c])===b){cleanupDate=wk[c];break;}}
-        if(!cleanupDate) cleanupDate=(b.cl&&b.cl.length>0)?b.cl[0]:nextDay(b.co);
-      }
+      // Najdi cleanup v cl[], jinak použij co+1 jako default
+      for(let c=col;c<=ec;c++){if(wk[c]&&clFor(wk[c])===b){cleanupDate=wk[c];break;}}
+      if(!cleanupDate&&(!b.cl||b.cl.length===0)) cleanupDate=nextDay(b.co);
       segs.push({b,sc:col,ec,rL,rR,cleanupDate,isTail:false});
     });
 
@@ -1006,8 +1003,11 @@ function rCal(){
       const b=S.bookings.find(bk=>nextDay(bk.co)===d&&bk.ci<wF);
       if(!b)return;
       const key='tail_'+b.ci+b.n;if(seen.has(key))return;seen.add(key);
-      // Tail NIKDY nemá subtitle — subtitle byl zobrazen v týdnu kde byl checkin
-      segs.push({b,sc:col,ec:col,rL:false,rR:true,cleanupDate:null,isTail:true});
+      // Tail také zobrazí subtitle — uklízečka ho musí vidět i když checkin byl minulý měsíc
+      const bCl=(b.cl||[]);
+      let tailCleanup=bCl.find(cd=>wk.includes(cd))||null;
+      if(!tailCleanup&&bCl.length===0) tailCleanup=nextDay(b.co);
+      segs.push({b,sc:col,ec:col,rL:false,rR:true,cleanupDate:tailCleanup,isTail:true});
     });
 
     // 1 column = 1/7 of row width. HALF = 50% of one column.
@@ -1056,7 +1056,7 @@ function rCal(){
         } else {
           subContent=`<span class="warn-badge" data-action="assignOpen" data-key="${aKey}" data-guest="${gEsc}" data-date="${cleanupDate}">⚠ přihlásit</span>`;
         }
-        const subL=pct(leftPct);
+        const subL=isTail ? '0%' : pct(leftPct);
         pills+=`<div class="pl-sub" style="left:${subL};right:0;top:${subTop}px">${subContent}</div>`;
       }
     });
