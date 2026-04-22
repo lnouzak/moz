@@ -1271,44 +1271,91 @@ async function doSync(){
   try{
     let all=[],page=1,total=999;
     while(all.length<total){
-      const res=await fetch(`https://moz-proxy.lnouzak.workers.dev/api/reservations?size=100&page=${page}&from=2025-01-01`,{headers:{'Api-Key':S.apiKey,'Cache-Control':'no-cache'}});
+      const res=await fetch(`https://moz-proxy.lnouzak.workers.dev/api/reservations?size=100&page=${page}&from=2025-01-01`,{
+        headers:{'Api-Key':S.apiKey,'Cache-Control':'no-cache'}
+      });
       if(!res.ok)throw new Error('HTTP '+res.status);
       const data=await res.json();
-      total=data.total_items||data.totalItems||data.total||999;
-      const bks=data.bookings||[];
+      total=data.total_items||data.totalItems||data.total||0;
+      const bks=data.bookings||data.reservations||data.items||[];
       if(!bks.length)break;
       all=all.concat(bks);
       if(all.length>=total)break;
       page++;
       lbl.textContent=`Načítám... ${all.length}/${total}`;
     }
-    const newBks=all.map(b=>({
-      id:b.id,
-      n:(b.guestName||((b.firstname||'')+' '+(b.lastname||''))).trim(),
-      ci:b.arrival,co:b.departure,
-      g:(b.adults||1)+(b.children||0),
-      c:b.children||0,
-      s:(b.channel?.name||'').toLowerCase().includes('airbnb')?'airbnb':'booking',
-      cl:[]
-    })).filter(b=>b.ci&&b.co);
-    if(newBks.length){
-      const existing=S.bookings;
-      // Zachovat cl z existujících dat
-      newBks.forEach(b=>{
-        const old=existing.find(o=>(o.id&&o.id===b.id)||(o.n===b.n&&o.ci===b.ci));
-        if(old&&old.cl&&old.cl.length)b.cl=old.cl;
-      });
-      // Zachovat historická data z excelu která Smoobu nevrátí
-      const newKeys=new Set(newBks.map(b=>b.ci+'|'+b.n));
-      const historical=existing.filter(b=>!newKeys.has(b.ci+'|'+b.n));
-      S.bookings=[...historical,...newBks].sort((a,b)=>a.ci>b.ci?1:-1);
-      S.lastSync=Date.now();save();
-      dot.className='sdot ok';lbl.textContent='Synchronizovat';
-      sub.textContent='Smoobu: '+new Date().toLocaleTimeString('cs');
-      rDash();
-      alert(`Hotovo: ${newBks.length} ze Smoobu + ${historical.length} historických.`);
+
+    if(!all.length){
+      dot.className='sdot err';lbl.textContent='Chyba';
+      sub.textContent='Smoobu: žádná data';
+      return;
     }
-  }catch(e){dot.className='sdot err';lbl.textContent='Chyba';sub.textContent='Chyba: '+e.message;}
+
+    // Datum POUZE jako string .slice(0,10) — žádný new Date() = žádný timezone posun o den
+    const newBks=all.map(b=>{
+      const name=(
+        b.guestName||b.guest_name||
+        ((b.firstname||b.first_name||'').trim()+' '+(b.lastname||b.last_name||'').trim()).trim()||
+        'Neznámý host'
+      ).trim();
+      const ci=(b.arrival||b.check_in||b.checkin||'').slice(0,10);
+      const co=(b.departure||b.check_out||b.checkout||'').slice(0,10);
+      if(!ci||!co)return null;
+      const channel=(b.channel?.name||b.channelName||b.platform||'').toLowerCase();
+      const src=channel.includes('airbnb')?'airbnb':'booking';
+      const adults=parseInt(b.adults||b.adultCount||1)||1;
+      const children=parseInt(b.children||b.childrenCount||0)||0;
+      return{
+        id:String(b.id||b.uid||b.reservation_id||''),
+        n:name,ci,co,
+        g:adults+children,c:children,
+        s:src,cl:[],_fromSmoobu:true
+      };
+    }).filter(Boolean);
+
+    // MERGE — existující rezervace se NIKDY nemažou, Smoobu jen přidá/updatuje
+    const existing=[...S.bookings];
+    const byId={};
+    const byCiName={};
+    existing.forEach((b,idx)=>{
+      if(b.id)byId[String(b.id)]=idx;
+      byCiName[(b.ci||'')+'|'+(b.n||'')]=idx;
+    });
+
+    const merged=[...existing];
+    newBks.forEach(nb=>{
+      let idx=-1;
+      if(nb.id&&byId[nb.id]!==undefined)idx=byId[nb.id];
+      else if(byCiName[nb.ci+'|'+nb.n]!==undefined)idx=byCiName[nb.ci+'|'+nb.n];
+      if(idx>=0){
+        const old=merged[idx];
+        merged[idx]={...nb,cl:old.cl||[],_fromSmoobu:true};
+      } else {
+        merged.push(nb);
+      }
+    });
+
+    merged.sort((a,b)=>a.ci>b.ci?1:a.ci<b.ci?-1:0);
+    S.bookings=merged;
+    S.lastSync=Date.now();
+    save();
+
+    dot.className='sdot ok';
+    lbl.textContent='Synchronizovat';
+    sub.textContent='Smoobu: '+new Date().toLocaleTimeString('cs');
+
+    const activePage=document.querySelector('.pg.on')?.id?.replace('pg-','');
+    if(activePage==='dash')rDash();
+    else if(activePage==='cal')rCal();
+
+    alert(`Hotovo: ${newBks.length} ze Smoobu, celkem ${merged.length} rezervací.`);
+
+  }catch(e){
+    dot.className='sdot err';
+    lbl.textContent='Chyba';
+    sub.textContent='Chyba: '+e.message;
+    console.error('Sync error:',e);
+  }
 }
 
 // Auto-sync každých 30 minut
