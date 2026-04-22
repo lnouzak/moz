@@ -989,11 +989,14 @@ function rCal(){
       const coNextD=nextDay(b.co);
       const rL=b.ci>=wF&&b.ci<=wL; // checkin je v tomto týdnu
       const rR=coNextD>=wF&&coNextD<=wL; // co+1 je v tomto týdnu
-      // Cleanup datum — zobrazí se na každém segmentu (i tail) kde je začátek viditelný
+      // Cleanup datum — jen pro zobrazení subtitlu
+      // Pravidlo: subtitle se zobrazí POUZE pokud rL=true (checkin v tomto týdnu)
       let cleanupDate=null;
-      // Najdi cleanup v cl[], jinak použij co+1 jako default
-      for(let c=col;c<=ec;c++){if(wk[c]&&clFor(wk[c])===b){cleanupDate=wk[c];break;}}
-      if(!cleanupDate&&(!b.cl||b.cl.length===0)) cleanupDate=nextDay(b.co);
+      if(rL){
+        // Najdi cleanup v cl[], jinak použij co+1 jako default
+        for(let c=col;c<=ec;c++){if(wk[c]&&clFor(wk[c])===b){cleanupDate=wk[c];break;}}
+        if(!cleanupDate) cleanupDate=(b.cl&&b.cl.length>0)?b.cl[0]:nextDay(b.co);
+      }
       segs.push({b,sc:col,ec,rL,rR,cleanupDate,isTail:false});
     });
 
@@ -1003,11 +1006,8 @@ function rCal(){
       const b=S.bookings.find(bk=>nextDay(bk.co)===d&&bk.ci<wF);
       if(!b)return;
       const key='tail_'+b.ci+b.n;if(seen.has(key))return;seen.add(key);
-      // Tail také zobrazí subtitle — uklízečka ho musí vidět i když checkin byl minulý měsíc
-      const bCl=(b.cl||[]);
-      let tailCleanup=bCl.find(cd=>wk.includes(cd))||null;
-      if(!tailCleanup&&bCl.length===0) tailCleanup=nextDay(b.co);
-      segs.push({b,sc:col,ec:col,rL:false,rR:true,cleanupDate:tailCleanup,isTail:true});
+      // Tail NIKDY nemá subtitle — subtitle byl zobrazen v týdnu kde byl checkin
+      segs.push({b,sc:col,ec:col,rL:false,rR:true,cleanupDate:null,isTail:true});
     });
 
     // 1 column = 1/7 of row width. HALF = 50% of one column.
@@ -1056,7 +1056,7 @@ function rCal(){
         } else {
           subContent=`<span class="warn-badge" data-action="assignOpen" data-key="${aKey}" data-guest="${gEsc}" data-date="${cleanupDate}">⚠ přihlásit</span>`;
         }
-        const subL=isTail ? '0%' : pct(leftPct);
+        const subL=pct(leftPct);
         pills+=`<div class="pl-sub" style="left:${subL};right:0;top:${subTop}px">${subContent}</div>`;
       }
     });
@@ -1271,7 +1271,7 @@ async function doSync(){
   try{
     let all=[],page=1,total=999;
     while(all.length<total){
-      const res=await fetch(`https://moz-proxy.lnouzak.workers.dev/api/reservations?size=100&page=${page}`,{headers:{'Api-Key':S.apiKey,'Cache-Control':'no-cache'}});
+      const res=await fetch(`https://moz-proxy.lnouzak.workers.dev/api/reservations?size=100&page=${page}&from=2025-01-01`,{headers:{'Api-Key':S.apiKey,'Cache-Control':'no-cache'}});
       if(!res.ok)throw new Error('HTTP '+res.status);
       const data=await res.json();
       total=data.total_items||data.totalItems||data.total||999;
@@ -1286,28 +1286,27 @@ async function doSync(){
       id:b.id,
       n:(b.guestName||((b.firstname||'')+' '+(b.lastname||''))).trim(),
       ci:b.arrival,co:b.departure,
-      g:(b.adults||0)+(b.children||0),
+      g:(b.adults||1)+(b.children||0),
       c:b.children||0,
       s:(b.channel?.name||'').toLowerCase().includes('airbnb')?'airbnb':'booking',
       cl:[]
     })).filter(b=>b.ci&&b.co);
-    // Debug — ukáže první rezervaci ze Smoobu
-    console.log('Smoobu raw[0]:', JSON.stringify(all[0]));
-    console.log('Mapped[0]:', JSON.stringify(newBks[0]));
     if(newBks.length){
       const existing=S.bookings;
-      // Zachovat cl (cleanup dates) z existujících dat
+      // Zachovat cl z existujících dat
       newBks.forEach(b=>{
         const old=existing.find(o=>(o.id&&o.id===b.id)||(o.n===b.n&&o.ci===b.ci));
         if(old&&old.cl&&old.cl.length)b.cl=old.cl;
       });
-      // Po synchronizaci používáme POUZE data ze Smoobu
-      S.bookings=newBks.sort((a,b)=>a.ci>b.ci?1:-1);
+      // Zachovat historická data z excelu která Smoobu nevrátí
+      const newKeys=new Set(newBks.map(b=>b.ci+'|'+b.n));
+      const historical=existing.filter(b=>!newKeys.has(b.ci+'|'+b.n));
+      S.bookings=[...historical,...newBks].sort((a,b)=>a.ci>b.ci?1:-1);
       S.lastSync=Date.now();save();
       dot.className='sdot ok';lbl.textContent='Synchronizovat';
       sub.textContent='Smoobu: '+new Date().toLocaleTimeString('cs');
       rDash();
-      alert(`Hotovo: ${newBks.length} rezervací ze Smoobu.`);
+      alert(`Hotovo: ${newBks.length} ze Smoobu + ${historical.length} historických.`);
     }
   }catch(e){dot.className='sdot err';lbl.textContent='Chyba';sub.textContent='Chyba: '+e.message;}
 }
