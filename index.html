@@ -979,58 +979,56 @@ function rCal(){
     const nextDay=ds=>{const d=new Date(ds+'T12:00:00');d.setDate(d.getDate()+1);return d.toISOString().slice(0,10);};
     const segs=[];const seen=new Set();
     const wF=wk.find(x=>x),wL=[...wk].reverse().find(x=>x);
+
+    // Main segments — rezervace které začínají v tomto týdnu NEBO pokračují z minulého
     wk.forEach((d,col)=>{
       if(!d)return;const b=bkFor(d);if(!b)return;
       const key=b.ci+b.n;if(seen.has(key))return;seen.add(key);
       let ec=col;
       for(let c=col+1;c<7;c++){if(wk[c]&&bkFor(wk[c])===b)ec=c;else break;}
-      let cleanupDate=null;
-      for(let c=col;c<=ec;c++){if(wk[c]&&clFor(wk[c])===b){cleanupDate=wk[c];break;}}
       const coNextD=nextDay(b.co);
-      const rL=b.ci>=wF&&b.ci<=wL;
-      const rR=coNextD>=wF&&coNextD<=wL;
-      segs.push({b,sc:col,ec,rL,rR,cleanupDate});
+      const rL=b.ci>=wF&&b.ci<=wL; // checkin je v tomto týdnu
+      const rR=coNextD>=wF&&coNextD<=wL; // co+1 je v tomto týdnu
+      // Cleanup datum — jen pro zobrazení subtitlu
+      // Pravidlo: subtitle se zobrazí POUZE pokud rL=true (checkin v tomto týdnu)
+      let cleanupDate=null;
+      if(rL){
+        // Najdi cleanup v cl[], jinak použij co+1 jako default
+        for(let c=col;c<=ec;c++){if(wk[c]&&clFor(wk[c])===b){cleanupDate=wk[c];break;}}
+        if(!cleanupDate) cleanupDate=(b.cl&&b.cl.length>0)?b.cl[0]:nextDay(b.co);
+      }
+      segs.push({b,sc:col,ec,rL,rR,cleanupDate,isTail:false});
     });
-    // Add tail segments: reservations that started before this week but co+1 is in this week
+
+    // Tail segmenty — rezervace co začaly minulý týden/měsíc a co+1 je v tomto týdnu
     wk.forEach((d,col)=>{
       if(!d)return;
-      const coNextD=nextDay(d);
-      // Find booking where this day is co+1 (i.e. checkout morning) and ci is before this week
       const b=S.bookings.find(bk=>nextDay(bk.co)===d&&bk.ci<wF);
       if(!b)return;
       const key='tail_'+b.ci+b.n;if(seen.has(key))return;seen.add(key);
-      // Find cleanup date for this booking in this week or previous
-      let tailCleanup=null;
-      const bCl=(b.cl||[]);
-      // Cleanup is on co day (checkout morning = co+1 which is d = this col)
-      // so cleanup date = b.co
-      if(bCl.includes(b.co)) tailCleanup=b.co;
-      else if(bCl.length) tailCleanup=bCl.find(cd=>wk.includes(cd))||null;
-      segs.push({b,sc:col,ec:col,rL:false,rR:true,cleanupDate:tailCleanup,isTail:true});
+      // Tail NIKDY nemá subtitle — subtitle byl zobrazen v týdnu kde byl checkin
+      segs.push({b,sc:col,ec:col,rL:false,rR:true,cleanupDate:null,isTail:true});
     });
 
     // 1 column = 1/7 of row width. HALF = 50% of one column.
     const HALF=100/7/2;
     const pct=v=>`${v.toFixed(3)}%`;
+    const lastRealCol=6-[...wk].reverse().findIndex(d=>d!==null);
+    const maxRight=(lastRealCol+1)/7*100;
 
     let pills='';
     segs.forEach(({b,sc,ec,rL,rR,cleanupDate,isTail})=>{
       const cls=b.s==='airbnb'?'ab':'bk';
       const rl=rL?10:0,rr=rR?10:0;
-
-      const coNext=nextDay(b.co);
-      const coNextCol=wk.indexOf(coNext);
+      const coNextCol=wk.indexOf(nextDay(b.co));
 
       let leftPct,rightPct;
       if(isTail){
-        // Tail: from left edge of co+1 column to 50% of that column
         leftPct=sc/7*100;
         rightPct=sc/7*100+HALF;
       } else {
-        leftPct  = rL ? (sc/7*100 + HALF) : 0;
-        const lastRealCol = 6 - [...wk].reverse().findIndex(d=>d!==null);
-        const maxRight = (lastRealCol+1)/7*100;
-        rightPct = (rR && coNextCol>=0) ? (coNextCol/7*100 + HALF) : Math.min(100, maxRight);
+        leftPct=rL?(sc/7*100+HALF):0;
+        rightPct=(rR&&coNextCol>=0)?(coNextCol/7*100+HALF):Math.min(100,maxRight);
       }
       const L=pct(leftPct);
       const W=pct(rightPct-leftPct);
@@ -1038,6 +1036,7 @@ function rCal(){
       const name=rL?`<span class="pl-name">${b.n.split(' ')[0]}</span>`:'';
       pills+=`<div class="pl ${cls}" title="${b.n} · ${fd(b.ci)}–${fd(b.co)}" style="left:${L};width:${W};top:${PT}px;border-radius:${rl}px ${rr}px ${rr}px ${rl}px">${name}</div>`;
 
+      // Subtitle — pouze pokud cleanupDate (= pouze na hlavním segmentu s checkin)
       if(cleanupDate){
         const aKey=`a_${cleanupDate}_${b.ci}`;
         const assignedId=S.assignments?.[aKey];
@@ -1047,7 +1046,6 @@ function rCal(){
         const gEsc=b.n.replace(/'/g,"\'").replace(/"/g,'&quot;');
         const nKey=`n_${cleanupDate}_${b.ci}`;
         const hasNote=!!(S.notes?.[nKey]);
-
         let subContent='';
         if(assignedUser){
           const noteTxt=hasNote?(S.notes[nKey]||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/\n/g,'&#10;'):'';
@@ -1058,8 +1056,7 @@ function rCal(){
         } else {
           subContent=`<span class="warn-badge" data-action="assignOpen" data-key="${aKey}" data-guest="${gEsc}" data-date="${cleanupDate}">⚠ přihlásit</span>`;
         }
-        const subLeftPct = isTail ? 0 : (rL ? sc/7*100+HALF : leftPct);
-        const subL=pct(subLeftPct);
+        const subL=pct(leftPct);
         pills+=`<div class="pl-sub" style="left:${subL};right:0;top:${subTop}px">${subContent}</div>`;
       }
     });
@@ -1289,7 +1286,7 @@ async function doSync(){
       id:b.id,
       n:(b.guestName||((b.firstname||'')+' '+(b.lastname||''))).trim(),
       ci:b.arrival,co:b.departure,
-      g:(b.adults||1)+(b.children||0),
+      g:(b.adults||0)+(b.children||0),
       c:b.children||0,
       s:(b.channel?.name||'').toLowerCase().includes('airbnb')?'airbnb':'booking',
       cl:[]
